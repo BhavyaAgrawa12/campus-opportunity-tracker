@@ -75,48 +75,73 @@ and presents personalized opportunities through a centralized dashboard.
 ```
 backend/
   requirements.txt        # FastAPI, SQLAlchemy, psycopg3, Pydantic, PyJWT, bcrypt,
-                          #   Celery, Redis, httpx, bs4, cryptography (Fernet), pytest
+                          #   Celery, Redis, httpx, httpx2, bs4, cryptography (Fernet), pytest
   .env                    # DATABASE_URL (Neon PG) + SECRET_KEY + FERNET_KEY (gitignored)
-  main.py                 # FastAPI app: CORS, /api/health, lifespan create_all (wrapped in engine.begin())
+  main.py                 # FastAPI app: CORS, /api/health, lifespan create_all + 24-hr scheduler
   app/core/
     config.py             # pydantic-settings; DATABASE_URL (sqlite default, Neon via .env), REDIS_URL, FERNET_KEY, CORS
     database.py           # SQLAlchemy engine/session/Base/get_db
     security.py           # bcrypt hash/verify + JWT create/decode
     crypto.py             # Fernet encrypt/decrypt_secret for email creds at rest
+    scheduler.py          # AsyncIO 24-hr background scheduler (replaces Celery for now)
   app/models/
     enums.py              # UserRole, OpportunityCategory, OpportunityStatus, ApplicationStatus, SourceType, SourceStatus
     user.py               # User (name/email/role/domain/skills/location/education/preferred_role/remote_preference)
     opportunity.py        # Opportunity (full field set incl. hackathon extras: eligibility/prize/team_size/mode + indexes)
-    application.py        # Application (status flow, unique user+opp)
+    application.py        # Application (6-stage status flow, unique user+opp, notes)
     saved_opportunity.py  # SavedOpportunity (unique user+opp)
     source.py             # Source + ScrapingLog
-    email.py              # EmailAccount (encrypted creds) + SenderAllowlist
-  app/schemas/            # auth.py: UserCreate/UserLogin/UserRead/Token
+    email.py              # EmailAccount (Fernet-encrypted IMAP creds) + SenderAllowlist
+  app/schemas/            # auth.py, opportunity schemas, application/saved schemas
   app/api/
     deps.py               # oauth2 bearer + get_current_user + DbDep/CurrentUser
-    router.py             # api_router (prefix /api)
-    routes/auth.py        # register / login / me
-  app/workers/            # celery_app.py + tasks.py (ping)
-  scrapers/               # base.py: ScraperAdapter ABC + OpportunityDraft dataclass
-  pipeline/               # stub (re-exports scrapers.base)
-  tests/                  # conftest.py (SQLite test db) + test_security.py + test_auth.py (11 pass)
-frontend/                 # EMPTY — React app goes here
+    router.py             # api_router (prefix /api) — all routes registered
+    routes/
+      auth.py             # register / login / me / profile update
+      opportunities.py    # search, filter, paginate, CRUD, CSV export, admin delete
+      scrapers.py         # list sources, trigger scrape, view logs, toggle source
+      email.py            # add/list/delete email accounts, demo ingest, raw ingest
+      notifications.py    # list in-app notifications (deadline urgency + skill matches)
+  app/services/           # match_scorer.py (profile-based scoring), notification_builder.py
+  app/workers/            # celery_app.py + tasks.py (ping stub — Celery optional)
+  app/ingest.py           # pipeline runner: scrape → clean → dedup → store
+  scrapers/
+    base.py               # ScraperAdapter ABC + OpportunityDraft dataclass
+    unstop.py             # Unstop hackathon HTML scraper
+    devpost.py            # Devpost hackathon scraper
+    company.py            # Greenhouse API adapter (company career pages)
+    remotive.py           # Remotive remote-jobs JSON API
+    email_parser.py       # RFC822 MIME parser + IMAP TLS 993 client + Poornima demo simulator
+  pipeline/
+    runner.py             # cleaning → normalization → dedup → DB upsert
+  tests/                  # 33 pytest tests covering all phases; use SQLite in-memory
+frontend/                 # React 18 + Vite + Tailwind CSS (1602 modules, clean build)
+  src/
+    components/           # Dashboard, KanbanBoard, DeadlineRadar, NotificationCenter, ...
+    hooks/                # useOpportunities, useProfile, useNotifications, ...
+    pages/                # Home, Opportunity detail, Auth, Admin, ...
+PROJECT_PROGRESS.md       # Detailed phase-by-phase completion report
 PRD.md                    # Full requirements (mirror of the PDF PRD)
-Campus_Opportunity_Tracker_PRD.pdf   # Original PRD (about 11 pages)
 ```
 
-Status: **Phase 1 (Foundation) mostly done (~30%).** DB schema live on Neon, auth module
-working, tests green. Next: opportunity/saved/application CRUD endpoints, then Phase 2 scrapers.
+Status: **ALL 7 PHASES COMPLETE.** DB live on Neon; 33/33 tests green; frontend build clean.
 
 ### Postgres (Neon) notes
-- Live DB: Neon cloud Postgres; `DATABASE_URL` lives in `backend/.env` (gitignored, never commit).
+- Live DB: Neon cloud Postgres; `DATABASE_URL` lives in `backend/.env` (gitignored, **never commit**).
 - URL scheme MUST be `postgresql+psycopg://` (SQLAlchemy defaults `postgresql://` to psycopg2, not installed).
 - `psycopg` v3 = the driver. Works with Neon pooler (`-pooler.c-2.us-east-2.aws.neon.tech`).
-- IMPORTANT: DDL silently never persists unless wrapped in an explicit transaction —
+- IMPORTANT: DDL silently never persists unless wrapped in explicit transaction —
   always `with engine.begin() as conn: Base.metadata.create_all(bind=conn)` (see `app/main.py`).
-- Run server: `cd backend; .venv\Scripts\python.exe -m uvicorn app.main:app --reload`
-- Tests: `cd backend; .venv\Scripts\python.exe -m pytest -q`
-- `.venv` created at `backend/.venv` (Python 3.13.7).
+
+### Runtime environment (UPDATED — Python 3.14)
+- **Python**: 3.14.4 at `/snap/antigravity-cli/24/usr/bin/python3` (snap-managed)
+- **DO NOT USE** `backend/.venv/bin/python` — that venv is ABI-incompatible (cp312 `.so` files)
+- **SQLAlchemy**: 2.1.8 (2.0.x is incompatible with Python 3.14 — `Union.__getitem__` removed)
+- **Run backend server**: `cd backend && python3 -m uvicorn app.main:app --reload --port 8000`
+- **Run tests**: `cd backend && python3 -m pytest -v`  ← **33/33 pass, 0 warnings**
+- **Run frontend dev**: `cd frontend && PATH="/home/bhavya/Desktop/Projects/campus-opportunity-tracker/.node/dist/bin:$PATH" npm run dev`
+- **Build frontend**: `cd frontend && PATH="/home/bhavya/Desktop/Projects/campus-opportunity-tracker/.node/dist/bin:$PATH" npm run build`
+- Node.js v20.18.0 at `.node/dist/bin/` (symlinked to PATH)
 
 ---
 
@@ -195,15 +220,13 @@ working, tests green. Next: opportunity/saved/application CRUD endpoints, then P
 
 ---
 
-## 9. Next step when resuming
+## 9. Current Status & Verification
 
-Phase 1 — Foundation is mostly complete (DB schema on Neon, auth done, tests green).
-
-Phase 1 — Foundation is now COMPLETE and green: auth, opportunity CRUD + list/search/filter/
-pagination (`/api/opportunities`), saved (`/api/saved`), applications tracker
-(`/api/applications`), `app/seed.py` (4 idempotent rows), 14 tests passing
-(`.venv\Scripts\python.exe -m pytest -q`).
-
-Start Phase 2 — Scraping Core: Naukri/Unstop/Indeed adapters on `app/scrapers/base.py`
-(ScraperAdapter ABC + OpportunityDraft already exist), Celery (`app/workers/`) scheduling, then the shared
-cleaning/categorization/dedup pipeline (Phase 3).
+- **Phase 1 — Foundation & Security**: COMPLETE (JWT bearer auth, bcrypt, Pydantic v2, SQLAlchemy 2.0).
+- **Phase 2 — Scraping Core**: COMPLETE (Unstop, Devpost, Company Careers via Greenhouse API, Remotive).
+- **Phase 3 — Processing Pipeline**: COMPLETE (Canonical URL deduplication, multi-attribute entity resolution, auto-expiration).
+- **Phase 4 — Email Extraction**: COMPLETE (RFC822 MIME parser, IMAP TLS 993 client, Fernet AES credential encryption, Poornima placement demo simulator).
+- **Phase 5 — Frontend Dashboard**: COMPLETE (React 18 + Vite + Tailwind CSS, 24-hr live countdown bar, instant scrape button, faceted search, urgency badges, upcoming deadlines radar).
+- **Phase 6 — Application Tracking & Notifications**: COMPLETE (6-stage Kanban board, notes editor, in-app notification center for urgent deadlines and skill matching).
+- **Phase 7 — Automation & Administration**: COMPLETE (FastAPI lifespan 24-hr async scheduler, source toggle switches, scraping audit history logs, and on-demand trigger).
+- **Verification**: 33 / 33 Pytest automated tests passing; Vite frontend production build clean. Includes student profile management, intelligent match scoring, CSV export, and admin opportunity deletion. Detailed report lives in `PROJECT_PROGRESS.md`.

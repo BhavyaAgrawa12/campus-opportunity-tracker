@@ -45,6 +45,7 @@ cot.db
 *.sqlite3
 
 # Frontend / Node
+.node/
 node_modules/
 dist/
 .output/
@@ -64,3 +65,4 @@ Thumbs.db
 
 # Temp files
 *_files.txt
+.agy-screenshot.png
