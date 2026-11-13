@@ -15,4 +15,10 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    beat_schedule={
+        "scrape-all-sources-periodic": {
+            "task": "app.workers.tasks.scrape_all_active_sources",
+            "schedule": 86400.0,  # Run every 24 hours (86,400s)
+        },
+    },
 )
