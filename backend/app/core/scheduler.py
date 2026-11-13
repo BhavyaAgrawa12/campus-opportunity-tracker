@@ -43,7 +43,10 @@ class ScraperScheduler:
 
                 now = datetime.now(timezone.utc)
                 if latest_log and latest_log.completed_at:
-                    self._last_scraped_at = latest_log.completed_at
+                    completed = latest_log.completed_at
+                    if completed.tzinfo is None:
+                        completed = completed.replace(tzinfo=timezone.utc)
+                    self._last_scraped_at = completed
                     # Calculate next scheduled run
                     scheduled_next = self._last_scraped_at + timedelta(seconds=self.INTERVAL_SECONDS)
                     if scheduled_next <= now:
