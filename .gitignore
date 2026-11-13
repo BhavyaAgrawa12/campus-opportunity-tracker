@@ -66,3 +66,5 @@ Thumbs.db
 # Temp files
 *_files.txt
 .agy-screenshot.png
+# Skills / agent config (not part of project source)
+.agents/
