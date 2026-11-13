@@ -5,9 +5,10 @@ from sqlalchemy import select
 from app.api.deps import CurrentUser, DbDep
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
-from app.schemas.auth import Token, UserCreate, UserLogin, UserRead
+from app.schemas.auth import Token, UserCreate, UserLogin, UserRead, UserUpdate
 
 router = APIRouter()
+
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -51,4 +52,16 @@ def login(payload: UserLogin, db: DbDep) -> Token:
 
 @router.get("/me", response_model=UserRead)
 def me(current_user: CurrentUser) -> User:
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+def update_profile(
+    payload: UserUpdate, current_user: CurrentUser, db: DbDep
+) -> User:
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, val in update_data.items():
+        setattr(current_user, field, val)
+    db.commit()
+    db.refresh(current_user)
     return current_user
