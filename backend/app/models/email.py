@@ -22,7 +22,7 @@ class EmailAccount(Base):
     imap_port: Mapped[int] = mapped_column(Integer, default=993)
     username: Mapped[str] = mapped_column(String(255))
     password_encrypted: Mapped[str] = mapped_column(String(500))
-    mailbox_folder: Mapped[str] = mapped_column(String(100), default="INBOX")
+    mailbox_folder: Mapped[str] = mapped_column(String(100), default="Nomination")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
