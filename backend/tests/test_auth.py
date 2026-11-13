@@ -64,3 +64,30 @@ def test_me_without_token(client):
 def test_me_with_invalid_token(client):
     resp = client.get("/api/auth/me", headers=_auth("garbage-token"))
     assert resp.status_code == 401
+
+
+def test_update_profile(client):
+    resp = _register(client, email="bhavya.update@poornima.edu.in")
+    assert resp.status_code == 201
+    token = resp.json()["access_token"]
+
+    update_resp = client.patch(
+        "/api/auth/me",
+        headers=_auth(token),
+        json={
+            "domain": "Artificial Intelligence",
+            "skills": ["python", "pytorch", "fastapi"],
+            "education": "B.Tech CSE - Poornima University",
+            "preferred_role": "Machine Learning Engineer",
+            "location": "Jaipur",
+            "remote_preference": True,
+        },
+    )
+    assert update_resp.status_code == 200
+    data = update_resp.json()
+    assert data["domain"] == "Artificial Intelligence"
+    assert data["skills"] == ["python", "pytorch", "fastapi"]
+    assert data["education"] == "B.Tech CSE - Poornima University"
+    assert data["preferred_role"] == "Machine Learning Engineer"
+    assert data["location"] == "Jaipur"
+    assert data["remote_preference"] is True

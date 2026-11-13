@@ -19,6 +19,16 @@ class UserCreate(BaseModel):
     remote_preference: bool | None = None
 
 
+class UserUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    domain: str | None = Field(default=None, max_length=100)
+    skills: list[str] | None = None
+    location: str | None = Field(default=None, max_length=120)
+    education: str | None = Field(default=None, max_length=200)
+    preferred_role: str | None = Field(default=None, max_length=120)
+    remote_preference: bool | None = None
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str

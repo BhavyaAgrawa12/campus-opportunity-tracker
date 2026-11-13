@@ -158,3 +158,38 @@ def test_opportunity_search_filters_pagination(client):
     assert pbody["page"] == 1
     assert pbody["page_size"] == 1
     assert pbody["total"] == 2
+
+
+def test_status_filter_and_metrics(client):
+    token = _register(client)
+    headers = _headers(token)
+
+    # 1. Test metrics
+    m_resp = client.get("/api/opportunities/metrics")
+    assert m_resp.status_code == 200
+    m_data = m_resp.json()
+    assert "live_total" in m_data
+    assert "expired_total" in m_data
+    assert "by_category" in m_data
+
+    # 2. Test status_filter=live
+    live_resp = client.get("/api/opportunities", params={"status_filter": "live"}, headers=headers)
+    assert live_resp.status_code == 200
+    for item in live_resp.json()["items"]:
+        if item["deadline"]:
+            assert item["deadline"] >= date.today().isoformat()
+
+
+def test_delete_opportunity(client):
+    token = _register(client, email="admin.delete@poornima.edu.in")
+    headers = _headers(token)
+    opp = _create_opp(client, headers, title="Obsolete Opportunity")
+    opp_id = opp["id"]
+
+    del_resp = client.delete(f"/api/opportunities/{opp_id}", headers=headers)
+    assert del_resp.status_code == 204
+
+    get_resp = client.get(f"/api/opportunities/{opp_id}")
+    assert get_resp.status_code == 404
+
+

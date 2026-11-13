@@ -1,4 +1,4 @@
-"""Seed the local database with a handful of opportunities.
+r"""Seed the local database with a handful of opportunities.
 
 Run from backend/ with the venv active:
 
@@ -112,21 +112,8 @@ def _now() -> datetime:
 
 
 def seed() -> int:
-    added = 0
-    with SessionLocal() as db:
-        for row in _SEED:
-            exists = db.scalar(
-                select(Opportunity).where(
-                    Opportunity.title == row["title"],
-                    Opportunity.organization == row["organization"],
-                )
-            )
-            if exists is not None:
-                continue
-            db.add(Opportunity(**row))
-            added += 1
-        db.commit()
-    return added
+    from app.ingest import ingest_live_opportunities
+    return ingest_live_opportunities()
 
 
 if __name__ == "__main__":
