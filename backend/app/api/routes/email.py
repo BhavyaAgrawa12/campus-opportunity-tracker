@@ -182,6 +182,7 @@ def sync_email_account(
         db=db,
         source_name=f"email_{account.email}",
         default_sender=account.email,
+        tag_filter=account.mailbox_folder or "Nomination",
     )
     return {
         "status": "success",

@@ -32,7 +32,7 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
     provider: 'gmail',
     imap_server: 'imap.gmail.com',
     imap_port: 993,
-    mailbox_folder: 'INBOX',
+    mailbox_folder: 'Nomination',
   });
 
   useEffect(() => {
@@ -241,13 +241,17 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Folder to Monitor</label>
+                  <label className="block font-medium text-slate-700 mb-1">Gmail Tag / Label to Track</label>
                   <input
                     type="text"
                     value={formData.mailbox_folder}
                     onChange={(e) => setFormData({ ...formData, mailbox_folder: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+                    placeholder="Nomination"
                   />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Only emails labeled or tagged with <b>Nomination</b> will be extracted.
+                  </p>
                 </div>
               </div>
 
