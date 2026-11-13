@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import desc, select
 
-from app.api.deps import DbDep
+from app.api.deps import CurrentAdmin, CurrentUser, DbDep
 from app.core.scheduler import scraper_scheduler
 from app.models.enums import SourceStatus, SourceType
 from app.models.source import ScrapingLog, Source
@@ -20,7 +20,7 @@ def get_scraper_status() -> dict:
 
 
 @router.post("/refresh")
-async def refresh_all_scrapers() -> dict:
+async def refresh_all_scrapers(current_user: CurrentUser) -> dict:
     """Trigger an immediate scraping execution across all adapters and reset the 24-hr countdown."""
     if scraper_scheduler.is_running:
         return {
@@ -99,7 +99,7 @@ def list_sources(db: DbDep) -> list[dict]:
 
 
 @router.patch("/{source_name}/toggle")
-def toggle_source(source_name: str, db: DbDep) -> dict:
+def toggle_source(source_name: str, db: DbDep, current_admin: CurrentAdmin) -> dict:
     """Toggle a scraper source between active and disabled status (PRD FR-9.2)."""
     source = db.scalar(select(Source).where(Source.name == source_name))
     if not source:
@@ -151,7 +151,9 @@ def list_scraping_logs(
 
 
 @router.post("/trigger/{source_name}")
-def trigger_scraper(source_name: str, background_tasks: BackgroundTasks) -> dict:
+def trigger_scraper(
+    source_name: str, background_tasks: BackgroundTasks, current_admin: CurrentAdmin
+) -> dict:
     """Trigger an immediate scraping execution for a specified adapter."""
     if source_name not in ADAPTER_REGISTRY:
         raise HTTPException(
@@ -168,7 +170,7 @@ def trigger_scraper(source_name: str, background_tasks: BackgroundTasks) -> dict
 
 
 @router.post("/trigger-all")
-def trigger_all(background_tasks: BackgroundTasks) -> dict:
+def trigger_all(background_tasks: BackgroundTasks, current_admin: CurrentAdmin) -> dict:
     """Trigger immediate execution for all active scraper adapters."""
     background_tasks.add_task(run_all_scrapers)
     return {

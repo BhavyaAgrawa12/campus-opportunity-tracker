@@ -166,11 +166,28 @@ def test_scrapers_status_api(client):
 
 
 def test_scrapers_refresh_api(client):
+    # Unauthenticated should be rejected
+    unauth_resp = client.post("/api/scrapers/refresh")
+    assert unauth_resp.status_code == 401
+
+    # Register authenticated user
+    reg_resp = client.post(
+        "/api/auth/register",
+        json={
+            "name": "Sync User",
+            "email": "sync.user@poornima.edu.in",
+            "password": "secret123!",
+            "role": "student",
+        },
+    )
+    token = reg_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     with patch("app.core.scheduler.scraper_scheduler.execute_scrape") as mock_exec:
         mock_exec.return_value = [
             {"source": "unstop", "records_found": 10, "records_added": 2, "duplicates": 8, "errors": 0}
         ]
-        resp = client.post("/api/scrapers/refresh")
+        resp = client.post("/api/scrapers/refresh", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"

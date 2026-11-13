@@ -181,12 +181,19 @@ def test_status_filter_and_metrics(client):
 
 
 def test_delete_opportunity(client):
-    token = _register(client, email="admin.delete@poornima.edu.in")
-    headers = _headers(token)
-    opp = _create_opp(client, headers, title="Obsolete Opportunity")
+    admin_token = _register(client, email="admin.delete@poornima.edu.in", role="admin")
+    admin_headers = _headers(admin_token)
+    opp = _create_opp(client, admin_headers, title="Obsolete Opportunity")
     opp_id = opp["id"]
 
-    del_resp = client.delete(f"/api/opportunities/{opp_id}", headers=headers)
+    # Student cannot delete
+    student_token = _register(client, email="student.attempt@poornima.edu.in", role="student")
+    student_headers = _headers(student_token)
+    forbidden_resp = client.delete(f"/api/opportunities/{opp_id}", headers=student_headers)
+    assert forbidden_resp.status_code == 403
+
+    # Admin can delete
+    del_resp = client.delete(f"/api/opportunities/{opp_id}", headers=admin_headers)
     assert del_resp.status_code == 204
 
     get_resp = client.get(f"/api/opportunities/{opp_id}")

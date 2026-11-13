@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.api.deps import CurrentUser, DbDep
 from app.core.crypto import encrypt_secret
 from app.models.email import EmailAccount, SenderAllowlist
-from app.models.enums import OpportunityStatus, SourceStatus, SourceType
+from app.models.enums import OpportunityStatus, SourceStatus, SourceType, UserRole
 from app.models.source import ScrapingLog, Source
 from app.services.email_service import (
     fetch_emails_from_imap,
@@ -136,6 +136,12 @@ def delete_email_account(
     if not account:
         raise HTTPException(status_code=404, detail="Email account not found")
 
+    if account.user_id is None and current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can remove system-wide mailboxes",
+        )
+
     db.delete(account)
     db.commit()
 
@@ -185,7 +191,7 @@ def sync_email_account(
 
 
 @router.post("/sync-demo")
-def sync_demo_placement_emails(db: DbDep) -> dict:
+def sync_demo_placement_emails(db: DbDep, current_user: CurrentUser) -> dict:
     """Ingest sample Poornima placement drive, hackathon, and GSoC announcement emails into the live catalog."""
     results = sync_sample_placement_mailbox(db)
     return {
@@ -199,6 +205,7 @@ def sync_demo_placement_emails(db: DbDep) -> dict:
 def ingest_raw_email(
     payload: RawEmailIngestRequest,
     db: DbDep,
+    current_user: CurrentUser,
 ) -> dict:
     """Directly ingest a raw RFC822 MIME message or structured subject/body from college emails."""
     if payload.raw_content:

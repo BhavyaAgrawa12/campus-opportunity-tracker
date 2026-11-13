@@ -23,7 +23,13 @@ def _headers(token):
 
 
 def test_email_api_demo_sync(client):
-    res = client.post("/api/email/sync-demo")
+    # Unauthenticated rejected
+    assert client.post("/api/email/sync-demo").status_code == 401
+
+    token = _register(client)
+    headers = _headers(token)
+
+    res = client.post("/api/email/sync-demo", headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"
@@ -32,19 +38,25 @@ def test_email_api_demo_sync(client):
     assert data["data"]["records_added"] >= 1
 
     # Second sync should deduplicate
-    res2 = client.post("/api/email/sync-demo")
+    res2 = client.post("/api/email/sync-demo", headers=headers)
     assert res2.status_code == 200
     data2 = res2.json()
     assert data2["data"]["duplicates"] >= 3
 
 
 def test_email_api_ingest_raw(client):
+    # Unauthenticated rejected
     payload = {
         "subject": "Campus Hackathon 2026",
         "body": "Join the annual Poornima Hackathon. Last date to apply: 2026-11-10. Register at https://unstop.com/hackathons/poornima-2026. Skills: python, react",
         "sender": "TPO Cell",
     }
-    res = client.post("/api/email/ingest-raw", json=payload)
+    assert client.post("/api/email/ingest-raw", json=payload).status_code == 401
+
+    token = _register(client)
+    headers = _headers(token)
+
+    res = client.post("/api/email/ingest-raw", json=payload, headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"

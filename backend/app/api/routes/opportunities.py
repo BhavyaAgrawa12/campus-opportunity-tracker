@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import and_, cast, func, or_, select, String
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import DbDep
+from app.api.deps import CurrentUser, DbDep
 from app.models.enums import (
     OpportunityCategory,
     OpportunityStatus,
@@ -182,7 +182,9 @@ def get_opportunity(opportunity_id: UUID, db: DbDep) -> Opportunity:
 
 
 @router.post("", response_model=OpportunityRead, status_code=status.HTTP_201_CREATED)
-def create_opportunity(payload: OpportunityCreate, db: DbDep) -> Opportunity:
+def create_opportunity(
+    payload: OpportunityCreate, db: DbDep, current_user: CurrentUser
+) -> Opportunity:
     opp = Opportunity(**payload.model_dump())
     db.add(opp)
     db.commit()
@@ -192,8 +194,12 @@ def create_opportunity(payload: OpportunityCreate, db: DbDep) -> Opportunity:
 
 @router.patch("/{opportunity_id}", response_model=OpportunityRead)
 def update_opportunity(
-    opportunity_id: UUID, payload: OpportunityUpdate, db: DbDep
+    opportunity_id: UUID,
+    payload: OpportunityUpdate,
+    db: DbDep,
+    current_user: CurrentUser,
 ) -> Opportunity:
+    _require_admin_or_coordinator(current_user)
     opp = db.get(Opportunity, opportunity_id)
     if opp is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
@@ -205,7 +211,10 @@ def update_opportunity(
 
 
 @router.delete("/{opportunity_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_opportunity(opportunity_id: UUID, db: DbDep) -> None:
+def delete_opportunity(
+    opportunity_id: UUID, db: DbDep, current_user: CurrentUser
+) -> None:
+    _require_admin_or_coordinator(current_user)
     opp = db.get(Opportunity, opportunity_id)
     if opp is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
