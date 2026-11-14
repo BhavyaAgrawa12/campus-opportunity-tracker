@@ -36,25 +36,25 @@ export default function FiltersBar({
     sortBy !== 'posted_at';
 
   return (
-    <div className="bg-surface-container-low border border-hairline rounded-xl p-3.5 sm:p-4 shadow-sm space-y-3">
+    <div className="bg-surface-container-low border border-hairline rounded-xl p-3 sm:p-4 shadow-sm space-y-2.5 sm:space-y-3 w-full max-w-full overflow-hidden">
       {/* Top row: Search input + Sorting + Live/Expired Filter */}
-      <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="flex flex-col md:flex-row gap-2.5 sm:gap-3 items-center justify-between w-full">
         {/* Search */}
-        <div className="relative flex-1 w-full">
-          <span className="material-symbols-outlined text-[18px] text-secondary absolute left-3.5 top-2.5">
+        <div className="relative flex-1 w-full min-w-0">
+          <span className="material-symbols-outlined text-[17px] text-secondary absolute left-3 top-2.5">
             search
           </span>
           <input
             type="text"
-            placeholder="Filter roles, companies, or skills (e.g. Stripe, Python, React, AI)..."
+            placeholder="Search roles, companies, or skills..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary placeholder:text-outline"
+            className="w-full pl-9 pr-8 py-2 text-xs sm:text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary placeholder:text-outline truncate"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2.5 text-outline hover:text-on-surface transition"
+              className="absolute right-2.5 top-2.5 text-outline hover:text-on-surface transition"
             >
               <span className="material-symbols-outlined text-[16px]">close</span>
             </button>
@@ -62,10 +62,10 @@ export default function FiltersBar({
         </div>
 
         {/* Status Pills: Live vs All vs Expired */}
-        <div className="flex items-center gap-1 bg-surface-container-highest p-1 rounded-lg border border-hairline w-full md:w-auto justify-center">
+        <div className="flex items-center gap-1 bg-surface-container-highest p-1 rounded-lg border border-hairline w-full md:w-auto justify-between sm:justify-center flex-shrink-0">
           <button
             onClick={() => setStatusFilter('live')}
-            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1 rounded font-mono-micro text-[11px] sm:text-mono-micro uppercase transition text-center ${
               statusFilter === 'live'
                 ? 'bg-secondary-container text-on-secondary font-bold shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
@@ -75,7 +75,7 @@ export default function FiltersBar({
           </button>
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1 rounded font-mono-micro text-[11px] sm:text-mono-micro uppercase transition text-center ${
               statusFilter === 'all'
                 ? 'bg-surface-container-high text-on-surface font-bold'
                 : 'text-on-surface-variant hover:text-on-surface'
@@ -85,7 +85,7 @@ export default function FiltersBar({
           </button>
           <button
             onClick={() => setStatusFilter('expired')}
-            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1 rounded font-mono-micro text-[11px] sm:text-mono-micro uppercase transition text-center ${
               statusFilter === 'expired'
                 ? 'bg-surface-container-high text-outline font-bold'
                 : 'text-on-surface-variant hover:text-on-surface'
@@ -96,14 +96,14 @@ export default function FiltersBar({
         </div>
 
         {/* Sort selector */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase hidden sm:inline">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto flex-shrink-0">
+          <span className="font-mono-micro text-[11px] sm:text-mono-micro text-on-surface-variant uppercase hidden sm:inline">
             Sort:
           </span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
+            className="w-full md:w-auto px-2.5 py-1.5 sm:py-2 text-xs sm:text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
           >
             <option value="posted_at" className="bg-surface-container">Recently Ingested</option>
             <option value="deadline" className="bg-surface-container">Closing Soonest</option>
@@ -113,16 +113,16 @@ export default function FiltersBar({
       </div>
 
       {/* Bottom row: Category chips + Paid toggle + Clear filter */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-hairline">
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-hairline w-full">
+        {/* Category Pills (horizontally scrollable on mobile) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto pb-1 sm:pb-0">
           {CATEGORIES.map((cat) => {
             const isCatActive = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-md text-mono-micro font-mono-micro uppercase transition ${
+                className={`px-2.5 py-1 rounded-md text-[11px] sm:text-mono-micro font-mono-micro uppercase transition flex-shrink-0 ${
                   isCatActive
                     ? 'bg-primary-container text-on-primary font-bold shadow-sm'
                     : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-hairline'
@@ -135,25 +135,25 @@ export default function FiltersBar({
         </div>
 
         {/* Filters control options */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           {/* Paid / Stipend toggle */}
-          <label className="flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-on-surface cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-xs sm:text-body-sm text-on-surface-variant hover:text-on-surface cursor-pointer select-none">
             <input
               type="checkbox"
               checked={isPaidOnly}
               onChange={(e) => setIsPaidOnly(e.target.checked)}
               className="rounded bg-surface-container border-hairline text-secondary focus:ring-0 cursor-pointer"
             />
-            <span className="font-mono-micro text-mono-micro uppercase">Paid / Stipend Only</span>
+            <span className="font-mono-micro text-[11px] sm:text-mono-micro uppercase">Paid Only</span>
           </label>
 
           {/* Reset button */}
           {hasActiveFilters && (
             <button
               onClick={onResetFilters}
-              className="text-mono-micro text-primary hover:underline flex items-center gap-1"
+              className="text-[11px] sm:text-mono-micro text-primary hover:underline flex items-center gap-1 flex-shrink-0"
             >
-              <span className="material-symbols-outlined text-[14px]">refresh</span>
+              <span className="material-symbols-outlined text-[13px] sm:text-[14px]">refresh</span>
               <span>Reset</span>
             </button>
           )}

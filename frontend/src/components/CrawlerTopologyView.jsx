@@ -76,57 +76,57 @@ export default function CrawlerTopologyView({ onSyncCompleted }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* SECTION 1: Telemetry Cockpit Header & Control Ribbon */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-container-low p-5 sm:p-6 rounded-xl border border-hairline shadow-md">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono-micro text-mono-micro text-tertiary px-2 py-0.5 rounded bg-surface-container-highest tracking-widest flex items-center gap-1.5 border border-tertiary/30">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-surface-container-low p-4 sm:p-6 rounded-xl border border-hairline shadow-md w-full">
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <span className="font-mono-micro text-[10px] sm:text-mono-micro text-tertiary px-2 py-0.5 rounded bg-surface-container-highest tracking-widest flex items-center gap-1.5 border border-tertiary/30">
               <span className="h-1.5 w-1.5 rounded-full bg-tertiary animate-pulse"></span>
-              ENGINE ACTIVE // 99.98% HEALTH
+              ENGINE // 99.98%
             </span>
-            <span className="font-mono-micro text-mono-micro text-secondary px-1.5 py-0.5 rounded bg-surface-container-high border border-hairline">
-              INGEST-ORCHESTRATOR v4.12
+            <span className="font-mono-micro text-[10px] sm:text-mono-micro text-secondary px-1.5 py-0.5 rounded bg-surface-container-high border border-hairline">
+              ORCHESTRATOR v4.12
             </span>
-            <span className="font-mono-micro text-mono-micro text-on-surface-variant flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
-              <span>24h Auto-Scheduler Running</span>
+            <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant flex items-center gap-1">
+              <span className="material-symbols-outlined text-[12px] text-outline">schedule</span>
+              <span>24h Cron Active</span>
             </span>
           </div>
 
-          <h1 className="font-headline-lg text-headline-lg tracking-tight text-on-surface font-bold uppercase mt-1">
-            Crawler Topology & Scraper Telemetry
+          <h1 className="font-headline-lg text-lg sm:text-headline-lg tracking-tight text-on-surface font-bold uppercase mt-1 truncate">
+            Crawler Topology & Health
           </h1>
-          <p className="font-mono-micro text-mono-micro text-on-surface-variant tracking-wider">
+          <p className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant break-words">
             // SOURCES: UNSTOP • DEVPOST • GREENHOUSE • REMOTIVE • POORNIMA IMAP [NOMINATION]
           </p>
         </div>
 
         {/* Action Ribbon */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab(activeTab === 'topology' ? 'logs' : 'topology')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-body-sm"
+            className="flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-xs sm:text-body-sm"
           >
-            <span className="material-symbols-outlined text-[16px] text-secondary">
+            <span className="material-symbols-outlined text-[15px] text-secondary">
               {activeTab === 'topology' ? 'list_alt' : 'hub'}
             </span>
-            <span>{activeTab === 'topology' ? 'View Audit Logs' : 'View Topology Grid'}</span>
+            <span>{activeTab === 'topology' ? 'Logs' : 'Topology'}</span>
           </button>
 
           <button
             onClick={handleSyncAll}
             disabled={syncingAll}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-xs sm:text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
           >
             <span
-              className={`material-symbols-outlined text-[16px] ${
+              className={`material-symbols-outlined text-[15px] ${
                 syncingAll ? 'animate-spin' : ''
               }`}
             >
               sync
             </span>
-            <span>{syncingAll ? 'Crawling All Sources...' : 'Sync All Targets'}</span>
+            <span>{syncingAll ? 'Crawling...' : 'Sync Targets'}</span>
           </button>
         </div>
       </div>

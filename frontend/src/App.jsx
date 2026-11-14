@@ -466,7 +466,7 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col selection:bg-secondary/20 selection:text-secondary">
+    <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col selection:bg-secondary/20 selection:text-secondary w-full max-w-full overflow-x-hidden">
       {/* Sticky Top Cockpit Header */}
       <Navbar
         activeTab={activeTab}
@@ -495,7 +495,7 @@ export default function App() {
       />
 
       {/* Main Content Area (offset by 64px left on lg) */}
-      <div className="lg:pl-64 pt-16 flex-1 flex flex-col">
+      <div className="lg:pl-64 pt-16 flex-1 flex flex-col w-full max-w-full min-w-0 overflow-x-hidden">
         {/* T-Minus Urgency Feed Ticker */}
         <UrgencyTicker
           opportunities={opportunities}
@@ -503,10 +503,10 @@ export default function App() {
           onSyncCompleted={handleSyncCompleted}
         />
 
-        <main className="w-full p-4 sm:p-6 lg:p-8 flex-1 flex flex-col gap-6 relative">
+        <main className="w-full max-w-full min-w-0 p-3 sm:p-5 lg:p-8 flex-1 flex flex-col gap-4 sm:gap-6 relative overflow-hidden">
           {/* Ambient Radial Atmosphere Glows */}
-          <div className="absolute top-0 left-1/4 w-96 h-36 bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
-          <div className="absolute top-20 right-1/4 w-80 h-44 bg-primary-container/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+          <div className="absolute top-0 left-1/4 w-72 sm:w-96 h-36 bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10 max-w-full"></div>
+          <div className="absolute top-20 right-1/4 w-60 sm:w-80 h-44 bg-primary-container/5 rounded-full blur-3xl pointer-events-none -z-10 max-w-full"></div>
 
           {/* Student Welcome & Poornima Personalization Ribbon */}
           {user && (

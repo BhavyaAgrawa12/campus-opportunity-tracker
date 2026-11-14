@@ -93,40 +93,37 @@ export default function ApplicationTracker({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* COCKPIT PIPELINE METRICS & ACTIONS HEADER */}
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-hairline">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-3">
-              <span className="font-mono-micro text-mono-micro px-2.5 py-0.5 rounded-full bg-secondary/15 text-secondary tracking-widest uppercase flex items-center gap-1.5 border border-secondary/30">
+      <section className="flex flex-col gap-3 sm:gap-4 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-hairline w-full">
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro px-2 py-0.5 rounded-full bg-secondary/15 text-secondary tracking-widest uppercase flex items-center gap-1.5 border border-secondary/30">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse"></span>
-                Live Pipeline Stream
+                Pipeline Stream
               </span>
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant">
-                // SPRINT &apos;25 CYCLE
-              </span>
-              <span className="font-mono-micro text-mono-micro text-outline tracking-wider hidden sm:inline">
-                BUILD: #8820-STABLE
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant">
+                // SPRINT &apos;25
               </span>
             </div>
-            <h1 className="font-headline-xl text-headline-xl tracking-tight text-on-surface font-extrabold flex items-baseline gap-3">
+            <h1 className="font-headline-xl text-xl sm:text-headline-xl tracking-tight text-on-surface font-extrabold flex items-baseline gap-2 truncate">
               APPLICATION PIPELINE
-              <span className="font-mono-code text-mono-code text-primary font-normal text-lg">
+              <span className="font-mono-code text-mono-code text-primary font-normal text-sm sm:text-lg">
                 v2.54
               </span>
             </h1>
           </div>
 
           {/* Action Control Group */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setManualModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-xs sm:text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
             >
-              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span>
               <span>New Entry</span>
-              <kbd className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-on-primary/20 text-on-primary">
+              <kbd className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-on-primary/20 text-on-primary hidden sm:inline">
                 N
               </kbd>
             </button>
@@ -134,36 +131,35 @@ export default function ApplicationTracker({
             {applications.length > 0 && (
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-body-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-xs sm:text-body-sm"
                 title="Export Pipeline CSV"
               >
-                <span className="material-symbols-outlined text-[18px] text-secondary">
+                <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-secondary">
                   download
                 </span>
-                <span>Export CSV</span>
+                <span>CSV</span>
               </button>
             )}
           </div>
         </div>
 
         {/* 4 Bento Telemetry Metrics Quadrants */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 w-full">
           {/* Metric 1: Total In Flight */}
-          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+          <div className="p-3 sm:p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-1.5 sm:gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
             <div className="flex items-center justify-between">
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant uppercase tracking-wider truncate">
                 Total In Flight
               </span>
-              <span className="material-symbols-outlined text-[18px] text-secondary">
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-secondary flex-shrink-0">
                 flight_takeoff
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono-metric text-mono-metric font-bold text-on-surface">
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <span className="font-mono-metric text-lg sm:text-mono-metric font-bold text-on-surface">
                 {totalInFlight}
               </span>
-              <span className="font-mono-micro text-mono-micro text-tertiary flex items-center">
-                <span className="material-symbols-outlined text-[14px]">trending_up</span>
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-tertiary flex items-center">
                 active
               </span>
             </div>
@@ -176,19 +172,19 @@ export default function ApplicationTracker({
           </div>
 
           {/* Metric 2: Active Interviews */}
-          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+          <div className="p-3 sm:p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-1.5 sm:gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
             <div className="flex items-center justify-between">
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
-                Active Interviews
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant uppercase tracking-wider truncate">
+                Interviews
               </span>
-              <span className="h-2 w-2 rounded-full bg-primary-container animate-ping"></span>
+              <span className="h-2 w-2 rounded-full bg-primary-container animate-ping flex-shrink-0"></span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono-metric text-mono-metric font-bold text-primary">
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <span className="font-mono-metric text-lg sm:text-mono-metric font-bold text-primary">
                 {activeInterviews.toString().padStart(2, '0')}
               </span>
-              <span className="font-mono-micro text-mono-micro text-primary-fixed-dim">
-                High Priority
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-primary-fixed-dim">
+                Active
               </span>
             </div>
             <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
@@ -200,21 +196,21 @@ export default function ApplicationTracker({
           </div>
 
           {/* Metric 3: Offers / Selected */}
-          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+          <div className="p-3 sm:p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-1.5 sm:gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
             <div className="flex items-center justify-between">
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
-                Offers / Selected
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant uppercase tracking-wider truncate">
+                Offers
               </span>
-              <span className="material-symbols-outlined text-[18px] text-tertiary">
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-tertiary flex-shrink-0">
                 military_tech
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono-metric text-mono-metric font-bold text-tertiary">
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <span className="font-mono-metric text-lg sm:text-mono-metric font-bold text-tertiary">
                 {offersSelected.toString().padStart(2, '0')}
               </span>
-              <span className="font-mono-micro text-mono-micro px-1.5 py-0.2 rounded bg-tertiary-container/30 text-tertiary">
-                Success Node
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro px-1 py-0.2 rounded bg-tertiary-container/30 text-tertiary">
+                Selected
               </span>
             </div>
             <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
@@ -226,21 +222,21 @@ export default function ApplicationTracker({
           </div>
 
           {/* Metric 4: Applied Velocity */}
-          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+          <div className="p-3 sm:p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-1.5 sm:gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
             <div className="flex items-center justify-between">
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant uppercase tracking-wider truncate">
                 Submissions
               </span>
-              <span className="material-symbols-outlined text-[18px] text-outline">
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-outline flex-shrink-0">
                 speed
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono-metric text-mono-metric font-bold text-on-surface">
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <span className="font-mono-metric text-lg sm:text-mono-metric font-bold text-on-surface">
                 {appliedCount}
               </span>
-              <span className="font-mono-micro text-mono-micro text-on-surface-variant">
-                in pipeline
+              <span className="font-mono-micro text-[10px] sm:text-mono-micro text-on-surface-variant">
+                sent
               </span>
             </div>
             <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
@@ -253,14 +249,23 @@ export default function ApplicationTracker({
         </div>
       </section>
 
-      {/* 6 Kanban Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-start overflow-x-auto pb-4">
+      {/* Mobile Swipe Hint */}
+      <div className="xl:hidden flex items-center justify-between text-mono-micro text-[11px] text-outline px-1">
+        <span className="flex items-center gap-1">
+          <span className="material-symbols-outlined text-[14px]">swipe</span>
+          Swipe horizontally across 6 stage lanes
+        </span>
+        <span>{applications.length} applications</span>
+      </div>
+
+      {/* 6 Kanban Columns (Horizontal Swipable on mobile, Grid on desktop) */}
+      <div className="flex xl:grid xl:grid-cols-6 gap-3 items-start overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none w-full max-w-full">
         {STAGES.map((stage) => {
           const items = grouped[stage.id] || [];
           return (
             <div
               key={stage.id}
-              className="bg-surface-container-lowest border border-hairline rounded-xl flex flex-col min-w-[240px]"
+              className="bg-surface-container-lowest border border-hairline rounded-xl flex flex-col w-[85vw] sm:w-[320px] xl:w-auto flex-shrink-0 snap-center min-w-0"
             >
               {/* Lane Header */}
               <div className="p-3 border-b border-hairline flex items-center justify-between">

@@ -45,25 +45,33 @@ export default function Sidebar({
       {isOpenMobile && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm lg:hidden animate-in fade-in duration-150"
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-40 flex flex-col justify-between pt-20 pb-6 px-4 border-r border-hairline transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 h-full w-64 max-w-[80vw] bg-surface-container-lowest z-50 lg:z-40 flex flex-col justify-between pt-16 lg:pt-20 pb-6 px-4 border-r border-hairline transition-transform duration-200 lg:translate-x-0 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col gap-6">
-          {/* Header indicator */}
+        <div className="flex flex-col gap-5 sm:gap-6">
+          {/* Header indicator & mobile close button */}
           <div className="px-3 flex items-center justify-between">
             <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
               Telemetry Feeds
             </span>
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+              </span>
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden p-1 rounded-md text-on-surface-variant hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
           </div>
 
           {/* Navigation links */}

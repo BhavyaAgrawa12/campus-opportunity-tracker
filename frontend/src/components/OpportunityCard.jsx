@@ -67,11 +67,11 @@ export default function OpportunityCard({
   const categoryStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.default;
 
   return (
-    <div className="group relative bg-surface-container-low hover:bg-surface-container rounded-xl border border-hairline hover:border-hairline/80 p-4 sm:p-5 shadow-sm hover:shadow-bento-card transition-all duration-200 flex flex-col justify-between">
+    <div className="group relative bg-surface-container-low hover:bg-surface-container rounded-xl border border-hairline hover:border-hairline/80 p-3.5 sm:p-5 shadow-sm hover:shadow-bento-card transition-all duration-200 flex flex-col justify-between w-full max-w-full overflow-hidden">
       <div>
         {/* Top Header: Source, Category, Match Score & Bookmark */}
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             <span
               className={`px-2 py-0.5 text-mono-micro font-mono-micro rounded border capitalize font-semibold ${categoryStyle}`}
             >
@@ -79,20 +79,20 @@ export default function OpportunityCard({
             </span>
 
             {source && (
-              <span className="px-1.5 py-0.5 text-mono-micro font-mono-micro rounded bg-surface-container-high text-on-surface-variant border border-hairline uppercase">
+              <span className="px-1.5 py-0.5 text-[10px] sm:text-mono-micro font-mono-micro rounded bg-surface-container-high text-on-surface-variant border border-hairline uppercase truncate max-w-[90px]">
                 {source}
               </span>
             )}
 
             {isClosingSoon && (
-              <span className="px-1.5 py-0.5 text-mono-micro font-mono-micro font-bold bg-primary-container/20 text-primary border border-primary-container/40 rounded flex items-center gap-1">
+              <span className="px-1.5 py-0.5 text-[10px] sm:text-mono-micro font-mono-micro font-bold bg-primary-container/20 text-primary border border-primary-container/40 rounded flex items-center gap-1 flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping" />
                 <span>{daysRemaining === 0 ? 'Today' : `${daysRemaining}d left`}</span>
               </span>
             )}
 
             {isPast && (
-              <span className="px-1.5 py-0.5 text-mono-micro font-mono-micro rounded bg-surface-container-highest text-outline">
+              <span className="px-1.5 py-0.5 text-[10px] sm:text-mono-micro font-mono-micro rounded bg-surface-container-highest text-outline flex-shrink-0">
                 Expired
               </span>
             )}
@@ -101,10 +101,10 @@ export default function OpportunityCard({
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {matchScore > 0 && (
               <div
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/15 border border-secondary/30 text-secondary font-mono-micro text-mono-micro font-bold"
-                title={`${matchScore}% Match based on your domain and skills profile`}
+                className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full bg-secondary-container/15 border border-secondary/30 text-secondary font-mono-micro text-[10px] sm:text-mono-micro font-bold flex-shrink-0"
+                title={`${matchScore}% Match`}
               >
-                <span className="material-symbols-outlined text-[13px]">
+                <span className="material-symbols-outlined text-[12px] sm:text-[13px]">
                   auto_awesome
                 </span>
                 <span>{matchScore}%</span>
@@ -116,14 +116,14 @@ export default function OpportunityCard({
                 e.stopPropagation();
                 onToggleSave(opportunity);
               }}
-              className={`p-1.5 rounded-lg border transition ${
+              className={`p-1.5 rounded-lg border transition flex-shrink-0 ${
                 isSaved
                   ? 'bg-secondary-container/20 text-secondary border-secondary/40'
                   : 'bg-surface-container-high border-hairline text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest'
               }`}
               title={isSaved ? 'Remove from saved' : 'Save opportunity'}
             >
-              <span className="material-symbols-outlined text-[17px]">
+              <span className="material-symbols-outlined text-[16px] sm:text-[17px]">
                 {isSaved ? 'bookmark_added' : 'bookmark'}
               </span>
             </button>
@@ -135,11 +135,11 @@ export default function OpportunityCard({
           onClick={() => onSelect(opportunity)}
           className="cursor-pointer group/title"
         >
-          <h3 className="font-headline-md text-headline-md font-bold text-on-surface group-hover/title:text-primary transition line-clamp-2 leading-snug">
+          <h3 className="font-headline-md text-sm sm:text-headline-md font-bold text-on-surface group-hover/title:text-primary transition line-clamp-2 leading-snug break-words">
             {title}
           </h3>
-          <div className="flex items-center gap-1.5 text-on-surface-variant text-body-sm mt-1">
-            <span className="material-symbols-outlined text-[15px] text-secondary">
+          <div className="flex items-center gap-1.5 text-on-surface-variant text-xs sm:text-body-sm mt-1 truncate">
+            <span className="material-symbols-outlined text-[14px] sm:text-[15px] text-secondary flex-shrink-0">
               corporate_fare
             </span>
             <span className="font-medium text-on-surface truncate">

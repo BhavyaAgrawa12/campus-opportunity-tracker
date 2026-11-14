@@ -45,22 +45,22 @@ export default function UrgencyTicker({
   };
 
   return (
-    <section className="w-full bg-surface-container-lowest border-y border-hairline px-4 lg:px-8 py-2.5">
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+    <section className="w-full max-w-full bg-surface-container-lowest border-y border-hairline px-3 sm:px-4 lg:px-8 py-2 overflow-hidden">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5 sm:gap-3 w-full">
         {/* Left side: Live Countdown Ticker Chips */}
         <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto scrollbar-none py-0.5">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high text-primary flex-shrink-0 border border-hairline">
-            <span className="material-symbols-outlined text-[15px] animate-pulse">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-high text-primary flex-shrink-0 border border-hairline text-xs">
+            <span className="material-symbols-outlined text-[14px] animate-pulse">
               timer
             </span>
             <span className="font-mono-micro text-mono-micro uppercase tracking-wider font-semibold">
-              T-MINUS FEED:
+              T-MINUS:
             </span>
           </div>
 
           {urgentItems.length === 0 ? (
-            <div className="text-body-sm text-on-surface-variant font-mono-micro px-2 py-1">
-              All deadlines currently stable. Checking telemetry nodes...
+            <div className="text-body-sm text-on-surface-variant font-mono-micro px-2 py-1 truncate">
+              All deadlines stable. Checking nodes...
             </div>
           ) : (
             urgentItems.map((item, idx) => {
@@ -69,9 +69,9 @@ export default function UrgencyTicker({
                 <div
                   key={item.id}
                   onClick={() => onSelectOpportunity && onSelectOpportunity(item)}
-                  className="group flex items-center gap-2.5 px-3 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex-shrink-0 border border-hairline shadow-sm"
+                  className="group flex items-center gap-2 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex-shrink-0 border border-hairline shadow-sm"
                 >
-                  <span className="flex h-2 w-2 relative">
+                  <span className="flex h-2 w-2 relative flex-shrink-0">
                     <span
                       className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
                         isCrit ? 'bg-primary-container' : 'bg-secondary'
@@ -83,18 +83,18 @@ export default function UrgencyTicker({
                       }`}
                     ></span>
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-body-sm text-body-sm font-medium text-on-surface group-hover:text-primary transition truncate max-w-[140px] sm:max-w-[180px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-body-sm text-xs sm:text-body-sm font-medium text-on-surface group-hover:text-primary transition truncate max-w-[120px] sm:max-w-[180px]">
                       {item.title}
                     </span>
                     {isCrit && (
-                      <span className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-primary-container text-on-primary font-bold">
+                      <span className="font-mono-micro text-[10px] px-1 py-0.2 rounded bg-primary-container text-on-primary font-bold">
                         URGENT
                       </span>
                     )}
                   </div>
                   <span
-                    className={`font-mono-code text-mono-code font-bold tracking-tight ${
+                    className={`font-mono-code text-xs font-bold tracking-tight flex-shrink-0 ${
                       isCrit ? 'text-primary' : 'text-on-surface-variant'
                     }`}
                   >
@@ -109,25 +109,25 @@ export default function UrgencyTicker({
         </div>
 
         {/* Right side: Sync engine status & instant trigger button */}
-        <div className="flex items-center gap-3.5 flex-shrink-0 self-end lg:self-center">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-surface-container-low border border-hairline">
-            <span className="relative flex h-2 w-2">
+        <div className="flex items-center justify-between lg:justify-end gap-2.5 sm:gap-3.5 w-full lg:w-auto flex-shrink-0 pt-1 lg:pt-0 border-t border-hairline/40 lg:border-t-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 sm:py-1 rounded bg-surface-container-low border border-hairline text-xs">
+            <span className="relative flex h-2 w-2 flex-shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
             </span>
-            <span className="font-mono-micro text-mono-micro text-on-surface-variant">
-              Scrapers Synced <span className="text-tertiary font-semibold">{lastSyncTime}</span>
+            <span className="font-mono-micro text-mono-micro text-on-surface-variant truncate">
+              Synced <span className="text-tertiary font-semibold">{lastSyncTime}</span>
             </span>
           </div>
 
           <button
             onClick={handleInstantSync}
             disabled={syncing}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-primary border border-hairline transition-all text-mono-micro font-mono-micro uppercase"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-primary border border-hairline transition-all text-mono-micro font-mono-micro uppercase text-xs"
             title="Trigger multi-source web and email scrape pipeline"
           >
             <span
-              className={`material-symbols-outlined text-[15px] ${
+              className={`material-symbols-outlined text-[14px] ${
                 syncing ? 'animate-spin text-primary' : 'text-secondary'
               }`}
             >
