@@ -43,6 +43,12 @@ export default function CrawlerTopologyView({ onSyncCompleted }) {
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
       console.error('Failed to toggle source:', err);
+      if (err.status === 401 || err.status === 403) {
+        setMessage('Admin credentials required to pause/enable scrapers. Please sign in as Admin.');
+      } else {
+        setMessage(err.message || 'Failed to toggle source');
+      }
+      setTimeout(() => setMessage(null), 4000);
     } finally {
       setTogglingSource(null);
     }
@@ -58,6 +64,12 @@ export default function CrawlerTopologyView({ onSyncCompleted }) {
       setTimeout(() => setMessage(null), 3500);
     } catch (err) {
       console.error('Failed to sync all sources:', err);
+      if (err.status === 401) {
+        setMessage('Please sign in to trigger an on-demand crawl across sources.');
+      } else {
+        setMessage(err.message || 'Failed to sync sources');
+      }
+      setTimeout(() => setMessage(null), 4000);
     } finally {
       setSyncingAll(false);
     }

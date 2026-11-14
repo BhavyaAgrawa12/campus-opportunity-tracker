@@ -35,12 +35,12 @@ export default function UrgencyTicker({
       if (onSyncCompleted) onSyncCompleted();
     } catch (err) {
       console.error('Scrape failed:', err);
-      setSyncStatus('Error');
+      setSyncStatus(err.status === 401 ? 'Auth Req' : 'Error');
     } finally {
       setTimeout(() => {
         setSyncing(false);
         setSyncStatus('Idle');
-      }, 2500);
+      }, 3000);
     }
   };
 

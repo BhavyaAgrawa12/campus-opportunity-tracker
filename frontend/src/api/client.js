@@ -69,7 +69,6 @@ export const api = {
     }),
 
   // Opportunities
-
   getOpportunities: (params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -86,6 +85,11 @@ export const api = {
   },
 
   getOpportunity: (id) => request(`/opportunities/${id}`),
+  createOpportunity: (payload) =>
+    request('/opportunities', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   deleteOpportunity: (id) => request(`/opportunities/${id}`, { method: 'DELETE' }),
   getMetrics: () => request('/opportunities/metrics'),
 
@@ -114,15 +118,16 @@ export const api = {
   deleteApplication: (id) =>
     request(`/applications/${id}`, { method: 'DELETE' }),
 
-  // 24-hr Scraper & Sync
+  // 24-hr Scraper & Sync (both names supported)
   getScraperStatus: () => request('/scrapers/status'),
+  triggerScrape: () => request('/scrapers/refresh', { method: 'POST' }),
   triggerScraperSync: () => request('/scrapers/refresh', { method: 'POST' }),
   getScraperLogs: () => request('/scrapers/logs'),
   getSources: () => request('/scrapers'),
   toggleScraperSource: (sourceName) =>
     request(`/scrapers/${sourceName}/toggle`, { method: 'PATCH' }),
 
-  // Email Mailbox Integration (Phase 4)
+  // Email Mailbox Integration (both names supported)
   getEmailAccounts: () => request('/email/accounts'),
   createEmailAccount: (payload) =>
     request('/email/accounts', {
@@ -133,6 +138,7 @@ export const api = {
     request(`/email/accounts/${id}`, { method: 'DELETE' }),
   syncEmailAccount: (id) =>
     request(`/email/accounts/${id}/sync`, { method: 'POST' }),
+  syncDemoEmail: () => request('/email/sync-demo', { method: 'POST' }),
   syncDemoEmails: () => request('/email/sync-demo', { method: 'POST' }),
   ingestRawEmail: (payload) =>
     request('/email/ingest-raw', {
@@ -140,6 +146,6 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  // Notifications (Phase 6 / FR-8)
+  // Notifications
   getNotifications: () => request('/notifications'),
 };

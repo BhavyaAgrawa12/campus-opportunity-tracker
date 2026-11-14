@@ -49,7 +49,7 @@ export default function Navbar({
           </div>
 
           {/* Quick desktop links */}
-          <nav className="hidden xl:flex items-center gap-6 ml-4">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 ml-2 lg:ml-4">
             <button
               onClick={() => setActiveTab('radar')}
               className={`font-body-sm text-body-sm transition-colors ${

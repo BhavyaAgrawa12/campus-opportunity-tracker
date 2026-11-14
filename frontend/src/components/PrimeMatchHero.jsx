@@ -237,19 +237,17 @@ export default function PrimeMatchHero({
         </div>
 
         <div className="flex items-center gap-2">
-          {opportunity.application_url && (
-            <a
-              href={opportunity.application_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
-            >
-              <span>Direct Apply</span>
-              <span className="material-symbols-outlined text-[16px]">
-                arrow_outward
-              </span>
-            </a>
-          )}
+          <a
+            href={application_url || opportunity.source_url || `https://www.google.com/search?q=${encodeURIComponent(`${title} ${organization} careers`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
+          >
+            <span>Direct Apply</span>
+            <span className="material-symbols-outlined text-[16px]">
+              arrow_outward
+            </span>
+          </a>
         </div>
       </div>
     </div>

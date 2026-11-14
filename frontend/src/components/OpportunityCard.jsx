@@ -242,20 +242,18 @@ export default function OpportunityCard({
             Details
           </button>
 
-          {application_url && (
-            <a
-              href={application_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-1 rounded-md bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-secondary border border-hairline transition"
-              title="Open external application link"
-            >
-              <span className="material-symbols-outlined text-[16px] block">
-                arrow_outward
-              </span>
-            </a>
-          )}
+          <a
+            href={application_url || opportunity.source_url || `https://www.google.com/search?q=${encodeURIComponent(`${title} ${organization} careers`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1 rounded-md bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-secondary border border-hairline transition"
+            title="Open application portal"
+          >
+            <span className="material-symbols-outlined text-[16px] block">
+              arrow_outward
+            </span>
+          </a>
         </div>
       </div>
     </div>

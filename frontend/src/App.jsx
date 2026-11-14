@@ -173,11 +173,26 @@ export default function App() {
     }
   }, []);
 
-  // Fetch user data (saved and applications)
+  // Feedback Toast state
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Fetch user data (saved and applications) with localStorage fallback
   const fetchUserData = useCallback(async () => {
     if (!user) {
-      setSavedItems([]);
-      setApplications([]);
+      try {
+        const guestSaved = JSON.parse(localStorage.getItem('cot_guest_saved') || '[]');
+        const guestApps = JSON.parse(localStorage.getItem('cot_guest_apps') || '[]');
+        setSavedItems(guestSaved);
+        setApplications(guestApps);
+      } catch {
+        setSavedItems([]);
+        setApplications([]);
+      }
       return;
     }
     try {
@@ -204,14 +219,6 @@ export default function App() {
     fetchUserData();
   }, [fetchUserData]);
 
-  // Prompt login automatically if unauthenticated
-  useEffect(() => {
-    if (!authLoading && !user && !hasPromptedAuth) {
-      setAuthModalOpen(true);
-      setHasPromptedAuth(true);
-    }
-  }, [authLoading, user, hasPromptedAuth]);
-
   // Keyboard shortcut listener for ⌘K
   useEffect(() => {
     const handleGlobalKey = (e) => {
@@ -226,48 +233,99 @@ export default function App() {
 
   // Bookmark toggle
   const handleToggleSave = async (opp) => {
+    const alreadySaved = savedItems.some((s) => s.opportunity_id === opp.id);
     if (!user) {
-      setAuthModalOpen(true);
+      // Guest local storage fallback
+      let updated;
+      if (alreadySaved) {
+        updated = savedItems.filter((s) => s.opportunity_id !== opp.id);
+        showToast(`Removed "${opp.title}" from saved bookmarks.`);
+      } else {
+        updated = [...savedItems, { id: `guest-${opp.id}`, opportunity_id: opp.id, saved_at: new Date().toISOString() }];
+        showToast(`Saved "${opp.title}" to local radar.`);
+      }
+      setSavedItems(updated);
+      localStorage.setItem('cot_guest_saved', JSON.stringify(updated));
       return;
     }
-    const alreadySaved = savedItems.some((s) => s.opportunity_id === opp.id);
+
     try {
       if (alreadySaved) {
         await api.unsaveOpportunity(opp.id);
         setSavedItems((prev) => prev.filter((s) => s.opportunity_id !== opp.id));
+        showToast(`Removed "${opp.title}" from saved bookmarks.`);
       } else {
         const res = await api.saveOpportunity(opp.id);
         setSavedItems((prev) => [...prev, res]);
+        showToast(`Saved "${opp.title}" to radar.`);
       }
     } catch (err) {
       console.error('Failed to toggle save:', err);
+      showToast('Could not save opportunity.');
     }
   };
 
   // Applications tracker operations
   const handleSaveApplication = async (opportunityId, status, notes) => {
+    const opp = opportunities.find((o) => o.id === opportunityId) || selectedOpportunity;
     if (!user) {
-      setAuthModalOpen(true);
+      // Guest local storage fallback
+      const existing = applications.find((a) => a.opportunity_id === opportunityId);
+      let updated;
+      if (existing) {
+        updated = applications.map((a) =>
+          a.opportunity_id === opportunityId
+            ? { ...a, status: status || a.status, notes: notes !== undefined ? notes : a.notes }
+            : a
+        );
+      } else {
+        const newApp = {
+          id: `guest-app-${Date.now()}`,
+          opportunity_id: opportunityId,
+          status: status || 'applied',
+          notes: notes || '',
+          applied_at: new Date().toISOString(),
+          opportunity: opp,
+        };
+        updated = [...applications, newApp];
+      }
+      setApplications(updated);
+      localStorage.setItem('cot_guest_apps', JSON.stringify(updated));
+      showToast(`Pipeline updated to "${status || 'applied'}".`);
       return;
     }
+
     const existing = applications.find((a) => a.opportunity_id === opportunityId);
     if (existing) {
       const updated = await api.updateApplication(existing.id, { status, notes });
       setApplications((prev) =>
         prev.map((a) => (a.id === existing.id ? { ...updated, opportunity: existing.opportunity } : a))
       );
+      showToast(`Pipeline updated to "${status || existing.status}".`);
     } else {
       const created = await api.createApplication({
         opportunity_id: opportunityId,
         status,
         notes,
       });
-      const opp = opportunities.find((o) => o.id === opportunityId) || selectedOpportunity;
       setApplications((prev) => [...prev, { ...created, opportunity: opp }]);
+      showToast(`Moved to "${status}" lane.`);
     }
   };
 
   const handleUpdateAppStatus = async (applicationId, newStatus, notes) => {
+    if (!user) {
+      const updated = applications.map((a) =>
+        a.id === applicationId
+          ? { ...a, status: newStatus || a.status, notes: notes !== null && notes !== undefined ? notes : a.notes }
+          : a
+      );
+      setApplications(updated);
+      localStorage.setItem('cot_guest_apps', JSON.stringify(updated));
+      showToast('Application stage updated.');
+      return;
+    }
+
     try {
       const payload = {};
       if (newStatus) payload.status = newStatus;
@@ -276,34 +334,59 @@ export default function App() {
       setApplications((prev) =>
         prev.map((a) => (a.id === applicationId ? { ...a, ...updated } : a))
       );
+      showToast('Application stage updated.');
     } catch (err) {
       console.error('Failed to update app status:', err);
     }
   };
 
   const handleDeleteApplication = async (applicationId) => {
+    if (!user) {
+      const updated = applications.filter((a) => a.id !== applicationId);
+      setApplications(updated);
+      localStorage.setItem('cot_guest_apps', JSON.stringify(updated));
+      showToast('Application removed from tracking.');
+      return;
+    }
+
     try {
       await api.deleteApplication(applicationId);
       setApplications((prev) => prev.filter((a) => a.id !== applicationId));
+      showToast('Application removed from tracking.');
     } catch (err) {
       console.error('Failed to delete application:', err);
     }
   };
 
   const handleCreateManualEntry = async (manualData) => {
+    const mockOpp = {
+      id: `manual-${Date.now()}`,
+      title: manualData.title,
+      organization: manualData.organization,
+      category: manualData.category,
+      description: manualData.notes,
+      source: 'manual',
+      status: 'active',
+      location: 'On-Campus / Direct',
+    };
+
     if (!user) {
-      setAuthModalOpen(true);
+      const app = {
+        id: `guest-app-${Date.now()}`,
+        opportunity_id: mockOpp.id,
+        status: manualData.status,
+        notes: manualData.notes,
+        applied_at: new Date().toISOString(),
+        opportunity: mockOpp,
+      };
+      const updated = [...applications, app];
+      setApplications(updated);
+      localStorage.setItem('cot_guest_apps', JSON.stringify(updated));
+      showToast(`Created manual entry for "${manualData.title}".`);
       return;
     }
+
     try {
-      const mockOpp = {
-        title: manualData.title,
-        organization: manualData.organization,
-        category: manualData.category,
-        description: manualData.notes,
-        source: 'manual',
-        status: 'active',
-      };
       const createdOpp = await api.createOpportunity(mockOpp);
       const app = await api.createApplication({
         opportunity_id: createdOpp.id,
@@ -312,6 +395,7 @@ export default function App() {
       });
       setApplications((prev) => [...prev, { ...app, opportunity: createdOpp }]);
       fetchOpportunities();
+      showToast(`Created manual entry for "${manualData.title}".`);
     } catch (err) {
       console.error('Failed to create manual entry:', err);
     }
@@ -704,6 +788,20 @@ export default function App() {
         isOpen={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}
       />
+
+      {/* Floating Action Feedback Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-3 duration-200 pointer-events-none">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-surface-container-high border border-hairline text-on-surface shadow-2xl backdrop-blur-md">
+            <span className="material-symbols-outlined text-[18px] text-tertiary">
+              check_circle
+            </span>
+            <span className="font-body-sm text-body-sm font-medium">
+              {toastMessage}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
