@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User as UserIcon, BookOpen, MapPin, Target } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal({ isOpen, onClose }) {
@@ -13,8 +12,8 @@ export default function AuthModal({ isOpen, onClose }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [domain, setDomain] = useState('Web Development');
-  const [skills, setSkills] = useState('react, nodejs, python');
-  const [education, setEducation] = useState('B.Tech CSE - Poornima University');
+  const [skills, setSkills] = useState('React, Python, FastAPI');
+  const [education, setEducation] = useState('Poornima Group of Institutions');
   const [location, setLocation] = useState('Jaipur');
 
   if (!isOpen) return null;
@@ -46,156 +45,137 @@ export default function AuthModal({ isOpen, onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please verify your credentials.');
+      setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md bg-surface-container-low border border-hairline rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-hairline">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">
-              {isRegister ? 'Create your Student Account' : 'Welcome Back'}
+            <div className="flex items-center gap-2">
+              <span className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-surface-container-high text-primary tracking-widest border border-hairline">
+                RADAR // OP-TRACK
+              </span>
+              <span className="font-mono-micro text-mono-micro text-outline">
+                {isRegister ? 'New Student Registration' : 'Cockpit Access'}
+              </span>
+            </div>
+            <h3 className="font-headline-md text-headline-md font-bold text-on-surface mt-1">
+              {isRegister ? 'Initialize Pilot Profile' : 'Authenticate Credentials'}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isRegister
-                ? 'Personalize your feed and track opportunities'
-                : 'Sign in to access saved items & applications'}
-            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            className="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface border border-hairline transition"
           >
-            <X className="w-5 h-5" />
+            <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-body-sm">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg font-medium">
+            <div className="p-3 text-xs bg-error-container/20 border border-error/40 text-error rounded-xl">
               {error}
             </div>
           )}
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
-              <div className="relative">
-                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Bhavya Agrawal"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                />
-              </div>
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Bhavya Agrawal"
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+              />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="email"
-                required
-                placeholder={isRegister ? '2023cs...@poornima.edu.in' : 'name@example.com'}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-              />
-            </div>
+            <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+              Student / Placement Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. 2023csbhavya14015@poornima.edu.in"
+              className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="password"
-                required
-                minLength={8}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-              />
-            </div>
-            {isRegister && (
-              <span className="text-[11px] text-slate-400">At least 8 characters</span>
-            )}
+            <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+            />
           </div>
 
           {isRegister && (
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Domain</label>
-                  <div className="relative">
-                    <Target className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
-                    <select
-                      value={domain}
-                      onChange={(e) => setDomain(e.target.value)}
-                      className="w-full pl-8 pr-2 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                    >
-                      <option value="Software Development">Software Dev</option>
-                      <option value="AI/ML">AI / Machine Learning</option>
-                      <option value="Web Development">Web Development</option>
-                      <option value="Cloud / DevOps">Cloud / DevOps</option>
-                      <option value="Cybersecurity">Cybersecurity</option>
-                      <option value="Data Science">Data Science</option>
-                    </select>
-                  </div>
+                  <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                    Primary Domain
+                  </label>
+                  <select
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary text-xs"
+                  >
+                    <option value="Web Development">Web Development</option>
+                    <option value="Frontend Development">Frontend Development</option>
+                    <option value="Backend Development">Backend Development</option>
+                    <option value="Artificial Intelligence / ML">AI / ML</option>
+                    <option value="Data Science & Analytics">Data Science</option>
+                    <option value="Cyber Security">Cyber Security</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Location</label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
-                    <input
-                      type="text"
-                      placeholder="e.g. Jaipur"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full pl-8 pr-2 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                    />
-                  </div>
+                  <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                    Campus Location
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Jaipur"
+                    className="w-full px-3 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary text-xs"
+                  >
+                  </input>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
                   Skills (comma separated)
                 </label>
                 <input
                   type="text"
-                  placeholder="python, react, fastapi, sql"
                   value={skills}
                   onChange={(e) => setSkills(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
+                  placeholder="React, Python, SQL"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary text-xs font-mono-micro"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Education</label>
-                <div className="relative">
-                  <BookOpen className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="B.Tech CSE - Poornima University"
-                    value={education}
-                    onChange={(e) => setEducation(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                  />
-                </div>
               </div>
             </>
           )}
@@ -203,55 +183,39 @@ export default function AuthModal({ isOpen, onClose }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-lg shadow-md shadow-brand-500/25 transition disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-primary-container text-on-primary font-bold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary flex items-center justify-center gap-2 mt-2"
           >
-            {loading ? 'Processing...' : isRegister ? 'Register Account' : 'Sign In'}
+            <span>{loading ? 'Processing...' : isRegister ? 'Create Profile & Sign In' : 'Sign In to Cockpit'}</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
           </button>
+        </form>
 
-          <div className="pt-2 text-center text-xs text-slate-500 space-y-2">
-            <div>
-              {isRegister ? (
-                <span>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRegister(false);
-                      setError('');
-                    }}
-                    className="text-brand-600 font-semibold hover:underline"
-                  >
-                    Sign In
-                  </button>
-                </span>
-              ) : (
-                <span>
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRegister(true);
-                      setError('');
-                    }}
-                    className="text-brand-600 font-semibold hover:underline"
-                  >
-                    Create one now
-                  </button>
-                </span>
-              )}
-            </div>
-
-            <div>
+        {/* Footer Toggle */}
+        <div className="px-6 py-4 bg-surface-container-lowest border-t border-hairline text-center text-mono-micro text-on-surface-variant">
+          {isRegister ? (
+            <p>
+              Already registered?{' '}
               <button
                 type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 text-[11px] underline transition"
+                onClick={() => setIsRegister(false)}
+                className="text-secondary font-bold hover:underline ml-1"
               >
-                Continue browsing opportunities as guest →
+                Sign in with credentials
               </button>
-            </div>
-          </div>
-        </form>
+            </p>
+          ) : (
+            <p>
+              New student at campus?{' '}
+              <button
+                type="button"
+                onClick={() => setIsRegister(true)}
+                className="text-secondary font-bold hover:underline ml-1"
+              >
+                Create new pilot profile
+              </button>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

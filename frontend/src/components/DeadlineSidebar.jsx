@@ -1,5 +1,4 @@
 import React from 'react';
-import { Clock, Calendar, ChevronRight, AlertCircle } from 'lucide-react';
 
 export default function DeadlineSidebar({ opportunities = [], onSelectOpportunity }) {
   // Filter and sort items with valid deadlines
@@ -18,54 +17,61 @@ export default function DeadlineSidebar({ opportunities = [], onSelectOpportunit
     .slice(0, 6);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-      <div className="flex items-center space-x-2 mb-4">
-        <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
-          <Clock className="w-4 h-4" />
+    <div className="bg-surface-container-low border border-hairline rounded-xl p-4 sm:p-5 shadow-sm space-y-3">
+      <div className="flex items-center justify-between pb-3 border-b border-hairline">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-primary-container/20 text-primary border border-primary-container/30 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[16px]">timer</span>
+          </div>
+          <div>
+            <h3 className="font-headline-md text-body-md font-bold text-on-surface">
+              Upcoming Deadlines
+            </h3>
+            <p className="font-mono-micro text-mono-micro text-outline">
+              Expiring opportunities radar
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-slate-900">Upcoming Deadlines</h3>
-          <p className="text-[11px] text-slate-400">Act quickly before applications close</p>
-        </div>
+        <span className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-surface-container-high text-primary">
+          RADAR
+        </span>
       </div>
 
       {upcoming.length === 0 ? (
-        <div className="py-6 text-center text-xs text-slate-400">
+        <div className="py-8 text-center text-mono-micro text-outline text-[12px]">
           No deadlines approaching in the next 30 days.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {upcoming.map((item) => (
             <div
               key={item.id}
               onClick={() => onSelectOpportunity(item)}
-              className="group p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50/70 transition cursor-pointer flex items-center justify-between"
+              className="group p-2.5 rounded-lg border border-hairline hover:border-hairline/80 hover:bg-surface-container transition cursor-pointer flex items-center justify-between gap-2"
             >
-              <div className="pr-2 min-w-0">
-                <p className="text-xs font-bold text-slate-900 group-hover:text-brand-600 transition truncate">
+              <div className="pr-1 min-w-0">
+                <p className="text-body-sm font-semibold text-on-surface group-hover:text-primary transition truncate">
                   {item.title}
                 </p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.organization}</p>
+                <p className="font-mono-micro text-mono-micro text-on-surface-variant truncate mt-0.5">
+                  {item.organization}
+                </p>
               </div>
 
               <div className="text-right shrink-0">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    item.diffDays <= 3
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                      : item.diffDays <= 7
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : 'bg-slate-100 text-slate-700'
+                  className={`inline-block px-2 py-0.5 rounded font-mono-micro text-mono-micro font-bold ${
+                    item.diffDays <= 2
+                      ? 'bg-primary-container text-on-primary animate-pulse'
+                      : item.diffDays <= 5
+                      ? 'bg-primary-container/20 text-primary border border-primary-container/40'
+                      : 'bg-surface-container-high text-on-surface-variant border border-hairline'
                   }`}
                 >
-                  {item.diffDays === 0 ? 'Today!' : `${item.diffDays}d left`}
+                  {item.diffDays === 0
+                    ? 'Today'
+                    : `${item.diffDays}d left`}
                 </span>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {new Date(item.deadline).toLocaleDateString('en-IN', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </p>
               </div>
             </div>
           ))}

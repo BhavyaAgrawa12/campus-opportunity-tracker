@@ -1,13 +1,12 @@
 import React from 'react';
-import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: '', label: 'All' },
+  { id: '', label: 'All Roles' },
   { id: 'job', label: 'Jobs' },
   { id: 'internship', label: 'Internships' },
   { id: 'hackathon', label: 'Hackathons' },
   { id: 'scholarship', label: 'Scholarships' },
-  { id: 'workshop', label: 'Workshops' },
+  { id: 'nomination', label: 'Nominations' },
 ];
 
 export default function FiltersBar({
@@ -37,101 +36,96 @@ export default function FiltersBar({
     sortBy !== 'posted_at';
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+    <div className="bg-surface-container-low border border-hairline rounded-xl p-3.5 sm:p-4 shadow-sm space-y-3">
       {/* Top row: Search input + Sorting + Live/Expired Filter */}
       <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
         {/* Search */}
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <span className="material-symbols-outlined text-[18px] text-secondary absolute left-3.5 top-2.5">
+            search
+          </span>
           <input
             type="text"
-            placeholder="Search by role, company, or skills (e.g. Python, React, AI)..."
+            placeholder="Filter roles, companies, or skills (e.g. Stripe, Python, React, AI)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+            className="w-full pl-10 pr-9 py-2 text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary placeholder:text-outline"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-2.5 text-outline hover:text-on-surface transition"
             >
-              <X className="w-4 h-4" />
+              <span className="material-symbols-outlined text-[16px]">close</span>
             </button>
           )}
         </div>
 
-        {/* Status Toggle: Live vs Expired */}
-        <div className="flex items-center space-x-2 w-full md:w-auto shrink-0">
-          <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Status:</span>
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl space-x-1">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('live')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center space-x-1.5 ${
-                statusFilter === 'live'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${statusFilter === 'live' ? 'bg-white' : 'bg-emerald-500'}`} />
-              <span>Live</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                statusFilter === 'all'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('expired')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center space-x-1.5 ${
-                statusFilter === 'expired'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${statusFilter === 'expired' ? 'bg-white' : 'bg-rose-400'}`} />
-              <span>Expired</span>
-            </button>
-          </div>
+        {/* Status Pills: Live vs All vs Expired */}
+        <div className="flex items-center gap-1 bg-surface-container-highest p-1 rounded-lg border border-hairline w-full md:w-auto justify-center">
+          <button
+            onClick={() => setStatusFilter('live')}
+            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+              statusFilter === 'live'
+                ? 'bg-secondary-container text-on-secondary font-bold shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Live Only
+          </button>
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+              statusFilter === 'all'
+                ? 'bg-surface-container-high text-on-surface font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            All Feeds
+          </button>
+          <button
+            onClick={() => setStatusFilter('expired')}
+            className={`px-3 py-1 rounded font-mono-micro text-mono-micro uppercase transition ${
+              statusFilter === 'expired'
+                ? 'bg-surface-container-high text-outline font-bold'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Expired
+          </button>
         </div>
 
         {/* Sort selector */}
-        <div className="flex items-center space-x-2 w-full md:w-auto shrink-0">
-          <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Sort by:</span>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase hidden sm:inline">
+            Sort:
+          </span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 text-xs font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-700"
+            className="w-full md:w-auto px-3 py-2 text-body-sm bg-surface-container border border-hairline rounded-lg text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
           >
-            <option value="posted_at">Recently Posted</option>
-            <option value="deadline">Closest Deadline</option>
-            <option value="title">Opportunity Title</option>
+            <option value="posted_at" className="bg-surface-container">Recently Ingested</option>
+            <option value="deadline" className="bg-surface-container">Closing Soonest</option>
+            <option value="title" className="bg-surface-container">Role Title (A-Z)</option>
           </select>
         </div>
       </div>
 
-      {/* Second row: Category pills + Extra filter dropdowns */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+      {/* Bottom row: Category chips + Paid toggle + Clear filter */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-hairline">
         {/* Category Pills */}
-        <div className="flex flex-wrap gap-1.5 items-center">
+        <div className="flex flex-wrap items-center gap-1.5">
           {CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.id;
+            const isCatActive = selectedCategory === cat.id;
             return (
               <button
-                key={cat.id || 'all'}
-                type="button"
+                key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  isSelected
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`px-2.5 py-1 rounded-md text-mono-micro font-mono-micro uppercase transition ${
+                  isCatActive
+                    ? 'bg-primary-container text-on-primary font-bold shadow-sm'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-hairline'
                 }`}
               >
                 {cat.label}
@@ -140,53 +134,27 @@ export default function FiltersBar({
           })}
         </div>
 
-        {/* Secondary dropdown filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Domain */}
-          <select
-            value={selectedDomain}
-            onChange={(e) => setSelectedDomain(e.target.value)}
-            className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none"
-          >
-            <option value="">All Domains</option>
-            <option value="Software Development">Software Dev</option>
-            <option value="Web Development">Web Development</option>
-            <option value="AI/ML">AI / Machine Learning</option>
-            <option value="Cloud / DevOps">Cloud / DevOps</option>
-            <option value="Engineering & Tech">Engineering & Tech</option>
-          </select>
-
-          {/* Location */}
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none"
-          >
-            <option value="">All Locations</option>
-            <option value="Remote">Remote</option>
-            <option value="India">India</option>
-            <option value="United States">United States</option>
-          </select>
-
-          {/* Paid only checkbox */}
-          <label className="flex items-center space-x-1.5 text-xs font-medium text-slate-700 cursor-pointer bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 select-none">
+        {/* Filters control options */}
+        <div className="flex items-center gap-3">
+          {/* Paid / Stipend toggle */}
+          <label className="flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-on-surface cursor-pointer select-none">
             <input
               type="checkbox"
               checked={isPaidOnly}
               onChange={(e) => setIsPaidOnly(e.target.checked)}
-              className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              className="rounded bg-surface-container border-hairline text-secondary focus:ring-0 cursor-pointer"
             />
-            <span>Paid only</span>
+            <span className="font-mono-micro text-mono-micro uppercase">Paid / Stipend Only</span>
           </label>
 
-          {/* Reset Filters */}
+          {/* Reset button */}
           {hasActiveFilters && (
             <button
-              type="button"
               onClick={onResetFilters}
-              className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1 transition"
+              className="text-mono-micro text-primary hover:underline flex items-center gap-1"
             >
-              Reset
+              <span className="material-symbols-outlined text-[14px]">refresh</span>
+              <span>Reset</span>
             </button>
           )}
         </div>

@@ -1,16 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Mail,
-  X,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
-  ShieldCheck,
-  Plus,
-  Trash2,
-  Sparkles,
-  Inbox
-} from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -58,11 +46,13 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
     setMessage(null);
     setError(null);
     try {
-      const res = await api.syncDemoEmails();
-      setMessage(res.message || 'Demo placement emails ingested successfully!');
+      const res = await api.syncDemoEmail();
+      setMessage(
+        `Simulation Ingested: ${res.ingested} opportunities parsed strictly from Poornima [Nomination] tagged emails.`
+      );
       if (onSyncComplete) onSyncComplete();
     } catch (err) {
-      setError(err.message || 'Failed to ingest sample placement emails.');
+      setError(err.message || 'Failed to simulate email ingest');
     } finally {
       setSyncingDemo(false);
     }
@@ -70,33 +60,35 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
 
   const handleCreateAccount = async (e) => {
     e.preventDefault();
-    if (!formData.password) {
-      setError('Password or App Password is required.');
-      return;
-    }
-    setLoading(true);
     setError(null);
+    setMessage(null);
     try {
       await api.createEmailAccount(formData);
       setShowForm(false);
-      setFormData((prev) => ({ ...prev, password: '' }));
-      setMessage('Mailbox account securely connected with encrypted credentials!');
-      await loadAccounts();
+      setFormData({
+        email: '',
+        username: '',
+        password: '',
+        provider: 'gmail',
+        imap_server: 'imap.gmail.com',
+        imap_port: 993,
+        mailbox_folder: 'Nomination',
+      });
+      setMessage('Mailbox connected. Tag filter set to [Nomination].');
+      loadAccounts();
     } catch (err) {
-      setError(err.message || 'Failed to connect email account.');
-    } finally {
-      setLoading(false);
+      setError(err.message || 'Failed to connect email account');
     }
   };
 
   const handleDeleteAccount = async (id) => {
-    if (!window.confirm('Are you sure you want to disconnect this email account?')) return;
-    try {
-      await api.deleteEmailAccount(id);
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
-      setMessage('Email account removed.');
-    } catch (err) {
-      setError(err.message || 'Failed to delete account.');
+    if (window.confirm('Disconnect this email account from the tracker?')) {
+      try {
+        await api.deleteEmailAccount(id);
+        loadAccounts();
+      } catch (err) {
+        setError(err.message || 'Failed to delete account');
+      }
     }
   };
 
@@ -106,10 +98,11 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
     setError(null);
     try {
       const res = await api.syncEmailAccount(id);
-      setMessage(res.message || 'Mailbox sync finished.');
+      setMessage(`Mailbox synced: Ingested ${res.ingested} new [Nomination] tagged opportunities.`);
       if (onSyncComplete) onSyncComplete();
+      loadAccounts();
     } catch (err) {
-      setError(err.message || 'IMAP sync failed. Verify your App Password and IMAP settings.');
+      setError(err.message || 'Failed to fetch from IMAP mailbox');
     } finally {
       setSyncingAccountId(null);
     }
@@ -118,210 +111,257 @@ export default function EmailSyncModal({ isOpen, onClose, onSyncComplete }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in duration-150">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-surface-container-low border border-hairline rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <Mail className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-4 border-b border-hairline">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-tertiary-container/20 border border-tertiary/30 text-tertiary flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px]">mark_email_read</span>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Campus Email Integration (Phase 4)</h2>
-              <p className="text-xs text-slate-500">Designated Student Mailbox & Placement Cell Parser</p>
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
+                Designated Mailbox Ingestion
+              </h2>
+              <p className="font-mono-micro text-mono-micro text-outline">
+                PRD §FR-4: Restricted Tracking Strictly to [Nomination] Tagged Emails
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"
+            className="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface border border-hairline transition"
           >
-            <X className="w-5 h-5" />
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Alerts */}
+        {/* Status Notification */}
         {message && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+          <div className="mt-4 p-3 bg-tertiary-container/20 border border-tertiary/40 text-tertiary rounded-xl text-body-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
             <span>{message}</span>
           </div>
         )}
         {error && (
-          <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-            <span>{error}</span>
+          <div className="mt-4 p-3 bg-error-container/20 border border-error/40 text-error rounded-xl text-body-sm">
+            {error}
           </div>
         )}
 
-        {/* Demo Simulator Box */}
-        <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 to-blue-50/70 border border-indigo-100">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-2 text-indigo-900 font-semibold text-sm">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span>One-Click Placement Drive Simulator</span>
-              </div>
-              <p className="text-xs text-indigo-700/80 mt-1 leading-relaxed">
-                Test Poornima placement circulars instantly! Ingests sample RFC822 MIME emails: <b>TCS CodeVita Season 13</b>, <b>Smart Rajasthan Hackathon 2026</b>, and <b>Google Summer of Code (GSoC)</b> fellowship drive.
-              </p>
-            </div>
-            <button
-              onClick={handleDemoSync}
-              disabled={syncingDemo}
-              className="flex-shrink-0 flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncingDemo ? 'animate-spin' : ''}`} />
-              <span>{syncingDemo ? 'Ingesting...' : 'Ingest Sample Notices'}</span>
-            </button>
+        {/* Security & Tag Filter Callout */}
+        <div className="mt-4 p-3.5 rounded-xl bg-surface-container border border-hairline flex items-start gap-3">
+          <span className="material-symbols-outlined text-[18px] text-primary flex-shrink-0 mt-0.5">
+            verified_user
+          </span>
+          <div className="text-body-sm">
+            <p className="font-semibold text-on-surface">
+              Strict Tag Filter Active: <span className="text-primary font-mono-code font-bold">[Nomination]</span>
+            </p>
+            <p className="text-[12px] text-on-surface-variant mt-0.5">
+              Only emails tagged with &ldquo;Nomination&rdquo; in subject, labels, or body are extracted. All credentials stored with Fernet AES-256 encryption.
+            </p>
           </div>
         </div>
 
-        {/* Accounts Section */}
-        <div className="mt-6 space-y-4">
+        {/* Simulation / Demo Ingest Button */}
+        <div className="mt-4 p-4 rounded-xl bg-surface-container-high/40 border border-secondary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="font-mono-micro text-mono-micro text-secondary font-bold uppercase tracking-wider block">
+              POORNIMA PLACEMENT CELL SIMULATOR
+            </span>
+            <p className="text-body-sm text-on-surface font-medium mt-0.5">
+              Simulate college inbox sync with verified Nomination circulars
+            </p>
+          </div>
+          <button
+            onClick={handleDemoSync}
+            disabled={syncingDemo}
+            className="px-4 py-2 rounded-lg bg-secondary-container text-on-secondary font-bold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-secondary flex items-center justify-center gap-1.5 flex-shrink-0"
+          >
+            <span
+              className={`material-symbols-outlined text-[16px] ${
+                syncingDemo ? 'animate-spin' : ''
+              }`}
+            >
+              sync
+            </span>
+            <span>{syncingDemo ? 'Ingesting...' : 'Ingest Nomination Emails'}</span>
+          </button>
+        </div>
+
+        {/* Accounts List */}
+        <div className="mt-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
-              <Inbox className="w-4 h-4 text-slate-500" />
-              <span>Connected Mailboxes ({accounts.length})</span>
+            <h3 className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+              Connected IMAP Accounts ({accounts.length})
             </h3>
             {!showForm && (
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-1 text-xs font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg transition"
+                className="text-mono-micro text-primary hover:underline flex items-center gap-1"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Connect Mailbox</span>
+                <span className="material-symbols-outlined text-[14px]">add</span>
+                <span>Connect Account</span>
               </button>
             )}
           </div>
 
-          {/* Form */}
-          {showForm && (
-            <form onSubmit={handleCreateAccount} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <span className="text-xs font-bold text-slate-700">Add Designated Student Mailbox</span>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="text-xs text-slate-400 hover:text-slate-600"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">College Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value, username: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                    placeholder="2023csbhavya14015@poornima.edu.in"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">IMAP App Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                    placeholder="16-character Google App Password"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">IMAP Server</label>
-                  <input
-                    type="text"
-                    value={formData.imap_server}
-                    onChange={(e) => setFormData({ ...formData, imap_server: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Gmail Tag / Label to Track</label>
-                  <input
-                    type="text"
-                    value={formData.mailbox_folder}
-                    onChange={(e) => setFormData({ ...formData, mailbox_folder: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                    placeholder="Nomination"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    Only emails labeled or tagged with <b>Nomination</b> will be extracted.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-[11px] text-slate-500 flex items-center space-x-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Encrypted at rest with Fernet cryptographic keys.</span>
-                </span>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save & Protect'}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Accounts List */}
-          {accounts.length === 0 ? (
-            <div className="p-6 bg-slate-50/70 border border-dashed border-slate-300 rounded-2xl text-center text-xs text-slate-500">
-              No live IMAP mailboxes connected yet. Click <b>"Ingest Sample Notices"</b> above to test the email opportunity parser immediately, or connect your college mailbox.
+          {loading ? (
+            <div className="py-6 text-center text-mono-micro text-outline">
+              Loading accounts...
+            </div>
+          ) : accounts.length === 0 && !showForm ? (
+            <div className="p-4 rounded-xl bg-surface-container border border-hairline text-center text-body-sm text-on-surface-variant">
+              No IMAP accounts connected. You can use the Poornima Placement Cell Simulator above, or connect your student email.
             </div>
           ) : (
-            <div className="space-y-2">
-              {accounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-sm"
-                >
+            accounts.map((acc) => (
+              <div
+                key={acc.id}
+                className="p-3.5 rounded-xl bg-surface-container border border-hairline flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-secondary">
+                    mail
+                  </span>
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-slate-800">{acc.email}</span>
-                      <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-                        IMAP TLS (993)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Host: {acc.imap_server} · Folder: {acc.mailbox_folder}
+                    <p className="font-body-sm font-semibold text-on-surface">
+                      {acc.email}
+                    </p>
+                    <p className="font-mono-micro text-mono-micro text-outline">
+                      {acc.imap_server}:{acc.imap_port} • Tag: {acc.mailbox_folder || 'Nomination'}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleSyncAccount(acc.id)}
-                      disabled={syncingAccountId === acc.id}
-                      className="flex items-center space-x-1 px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold rounded-lg transition"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${syncingAccountId === acc.id ? 'animate-spin' : ''}`} />
-                      <span>{syncingAccountId === acc.id ? 'Syncing...' : 'Sync'}</span>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteAccount(acc.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleSyncAccount(acc.id)}
+                    disabled={syncingAccountId === acc.id}
+                    className="px-2.5 py-1 rounded-md bg-surface-container-high hover:bg-surface-container-highest text-secondary text-mono-micro border border-hairline transition"
+                  >
+                    {syncingAccountId === acc.id ? 'Syncing...' : 'Sync'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAccount(acc.id)}
+                    className="p-1 rounded-md text-outline hover:text-error transition"
+                    title="Disconnect account"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* Privacy Note */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex items-start space-x-2 text-[11px] text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-          <p>
-            <b>Privacy Guarantee (PRD §FR-4.1):</b> The system scans only opportunity announcements matching approved college senders and keywords. Raw email contents are never permanently stored or exposed.
-          </p>
+        {/* Add Account Form */}
+        {showForm && (
+          <form
+            onSubmit={handleCreateAccount}
+            className="mt-4 p-4 rounded-xl bg-surface-container border border-hairline space-y-3 text-body-sm animate-in fade-in"
+          >
+            <h4 className="font-headline-md text-body-md font-bold text-on-surface">
+              Connect Google Workspace / IMAP Mailbox
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value, username: e.target.value })
+                  }
+                  required
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                  App Password / Token
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="16-character app password"
+                  required
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                  IMAP Server
+                </label>
+                <input
+                  type="text"
+                  value={formData.imap_server}
+                  onChange={(e) => setFormData({ ...formData, imap_server: e.target.value })}
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Port
+                </label>
+                <input
+                  type="number"
+                  value={formData.imap_port}
+                  onChange={(e) =>
+                    setFormData({ ...formData, imap_port: parseInt(e.target.value) || 993 })
+                  }
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Mailbox Tag Filter
+                </label>
+                <input
+                  type="text"
+                  value={formData.mailbox_folder}
+                  onChange={(e) => setFormData({ ...formData, mailbox_folder: e.target.value })}
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface-container-highest border border-hairline text-primary focus:outline-none focus:border-secondary font-mono-micro font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface text-body-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary font-bold text-body-sm hover:brightness-110 shadow-glow-primary"
+              >
+                Connect & Encrypt
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div className="mt-6 pt-4 border-t border-hairline flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-body-sm font-medium"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

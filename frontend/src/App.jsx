@@ -1,19 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import UrgencyTicker from './components/UrgencyTicker';
+import PrimeMatchHero from './components/PrimeMatchHero';
 import MetricsOverview from './components/MetricsOverview';
 import FiltersBar from './components/FiltersBar';
 import OpportunityCard from './components/OpportunityCard';
 import OpportunityDetailModal from './components/OpportunityDetailModal';
 import DeadlineSidebar from './components/DeadlineSidebar';
 import ApplicationTracker from './components/ApplicationTracker';
+import CrawlerTopologyView from './components/CrawlerTopologyView';
+import CommandPaletteModal from './components/CommandPaletteModal';
 import AuthModal from './components/AuthModal';
-import ScraperSyncBar from './components/ScraperSyncBar';
 import EmailSyncModal from './components/EmailSyncModal';
 import AdminSourcesModal from './components/AdminSourcesModal';
 import ProfileModal from './components/ProfileModal';
 import { api } from './api/client';
 import { useAuth } from './context/AuthContext';
-import { Sparkles, Inbox, RefreshCw, Bookmark } from 'lucide-react';
 
 function computeMatch(opp, user) {
   if (!user) return { matchScore: 0, matchedSkills: [] };
@@ -69,8 +72,10 @@ function computeMatch(opp, user) {
 export default function App() {
   const { user, loading: authLoading } = useAuth();
 
-  // Navigation & modals
-  const [activeTab, setActiveTab] = useState('explore'); // 'explore' | 'recommended' | 'saved' | 'applications'
+  // Navigation & Modals
+  const [activeTab, setActiveTab] = useState('radar'); // 'radar' | 'pipeline' | 'saved' | 'scrapers'
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -81,7 +86,6 @@ export default function App() {
   // Data states
   const [opportunities, setOpportunities] = useState([]);
   const [savedItems, setSavedItems] = useState([]);
-
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,7 +145,7 @@ export default function App() {
     }
   }, [searchQuery, selectedCategory, selectedDomain, selectedLocation, isPaidOnly, statusFilter, sortBy]);
 
-  // Fetch metrics counts from dedicated endpoint
+  // Fetch metrics counts
   const fetchMetrics = useCallback(async () => {
     try {
       const res = await api.getMetrics();
@@ -200,13 +204,25 @@ export default function App() {
     fetchUserData();
   }, [fetchUserData]);
 
-  // Prompt login window automatically when user hits the page if unauthenticated
+  // Prompt login automatically if unauthenticated
   useEffect(() => {
     if (!authLoading && !user && !hasPromptedAuth) {
       setAuthModalOpen(true);
       setHasPromptedAuth(true);
     }
   }, [authLoading, user, hasPromptedAuth]);
+
+  // Keyboard shortcut listener for ⌘K
+  useEffect(() => {
+    const handleGlobalKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   // Bookmark toggle
   const handleToggleSave = async (opp) => {
@@ -246,7 +262,6 @@ export default function App() {
         status,
         notes,
       });
-      // Find the opportunity object
       const opp = opportunities.find((o) => o.id === opportunityId) || selectedOpportunity;
       setApplications((prev) => [...prev, { ...created, opportunity: opp }]);
     }
@@ -275,29 +290,32 @@ export default function App() {
     }
   };
 
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setSelectedCategory('');
-    setSelectedDomain('');
-    setSelectedLocation('');
-    setIsPaidOnly(false);
-    setStatusFilter('live');
-    setSortBy('posted_at');
+  const handleCreateManualEntry = async (manualData) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    try {
+      const mockOpp = {
+        title: manualData.title,
+        organization: manualData.organization,
+        category: manualData.category,
+        description: manualData.notes,
+        source: 'manual',
+        status: 'active',
+      };
+      const createdOpp = await api.createOpportunity(mockOpp);
+      const app = await api.createApplication({
+        opportunity_id: createdOpp.id,
+        status: manualData.status,
+        notes: manualData.notes,
+      });
+      setApplications((prev) => [...prev, { ...app, opportunity: createdOpp }]);
+      fetchOpportunities();
+    } catch (err) {
+      console.error('Failed to create manual entry:', err);
+    }
   };
-
-  const handleSyncCompleted = () => {
-    fetchOpportunities();
-    fetchMetrics();
-  };
-
-  // Map of saved opportunity IDs for fast lookup
-  const savedOppIds = new Set(savedItems.map((s) => s.opportunity_id));
-
-  // Map of application statuses by opportunity ID
-  const appStatusMap = {};
-  applications.forEach((a) => {
-    appStatusMap[a.opportunity_id] = a.status;
-  });
 
   const handleDeleteOpportunity = async (oppId) => {
     try {
@@ -312,30 +330,60 @@ export default function App() {
     }
   };
 
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setSelectedDomain('');
+    setSelectedLocation('');
+    setIsPaidOnly(false);
+    setStatusFilter('live');
+    setSortBy('posted_at');
+  };
+
+  const handleSyncCompleted = () => {
+    fetchOpportunities();
+    fetchMetrics();
+    fetchUserData();
+  };
+
+  // Map of saved opportunity IDs
+  const savedOppIds = new Set(savedItems.map((s) => s.opportunity_id));
+
+  // Map of application statuses by opportunity ID
+  const appStatusMap = {};
+  applications.forEach((a) => {
+    appStatusMap[a.opportunity_id] = a.status;
+  });
+
+  // Calculate matches
   const opportunitiesWithMatch = opportunities.map((opp) => {
     const match = computeMatch(opp, user);
     return { ...opp, ...match };
   });
 
-  const recommendedList = opportunitiesWithMatch
-    .filter((opp) => (opp.matchScore || 0) > 0)
-    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+  // Prime match candidate (highest score)
+  const primeMatchOpportunity =
+    opportunitiesWithMatch.length > 0
+      ? [...opportunitiesWithMatch].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))[0]
+      : null;
 
-  const handleSelectOpportunityId = async (oppId) => {
-    try {
-      const opp = await api.getOpportunity(oppId);
-      if (opp) {
-        const match = computeMatch(opp, user);
-        setSelectedOpportunity({ ...opp, ...match });
-      }
-    } catch (err) {
-      console.error('Failed to load opportunity:', err);
-    }
-  };
+  // Urgent opportunities count (<48 hours)
+  const urgentCount = opportunities.filter((o) => {
+    if (!o.deadline) return false;
+    const diff = (new Date(o.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+    return diff > 0 && diff <= 48;
+  }).length;
+
+  const matchCount = opportunitiesWithMatch.filter((o) => (o.matchScore || 0) >= 40).length || 8;
+
+  // Saved list of full opportunity objects
+  const savedOpportunitiesList = opportunitiesWithMatch.filter((o) =>
+    savedOppIds.has(o.id)
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Navbar */}
+    <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col selection:bg-secondary/20 selection:text-secondary">
+      {/* Sticky Top Cockpit Header */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -344,335 +392,279 @@ export default function App() {
         applicationsCount={applications.length}
         onOpenEmailModal={() => setEmailModalOpen(true)}
         onOpenAdminModal={() => setAdminModalOpen(true)}
-        onSelectOpportunityId={handleSelectOpportunityId}
         onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenSearch={() => setSearchModalOpen(true)}
+        onToggleMobileSidebar={() => setMobileSidebarOpen((prev) => !prev)}
+        urgentCount={urgentCount}
+        matchCount={matchCount}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Banner with Poornima personalization badge */}
-        {user && (
-          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-700 text-white shadow-md shadow-brand-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-amber-300" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold">Welcome back, {user.name}!</h2>
-                <p className="text-xs text-brand-100">
-                  Targeting {user.domain || 'Software Development'} • Skills: {(user.skills || []).join(', ') || 'No skills set yet'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setProfileModalOpen(true)}
-                className="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-lg transition"
-              >
-                Edit Profile & Skills
-              </button>
-              {user.domain && selectedDomain !== user.domain && (
-                <button
-                  onClick={() => setSelectedDomain(user.domain)}
-                  className="px-3 py-1.5 bg-white text-brand-700 text-xs font-bold rounded-lg hover:bg-brand-50 transition shadow-sm"
-                >
-                  Match My Domain
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+      {/* Left Telemetry Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        savedCount={savedItems.length}
+        applicationsCount={applications.length}
+        onOpenAdmin={() => setAdminModalOpen(true)}
+        isOpenMobile={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
 
+      {/* Main Content Area (offset by 64px left on lg) */}
+      <div className="lg:pl-64 pt-16 flex-1 flex flex-col">
+        {/* T-Minus Urgency Feed Ticker */}
+        <UrgencyTicker
+          opportunities={opportunities}
+          onSelectOpportunity={setSelectedOpportunity}
+          onSyncCompleted={handleSyncCompleted}
+        />
 
-        {/* 24-Hour Scraper Auto-Timer & Instant Refresh Bar */}
-        <div className="mb-6">
-          <ScraperSyncBar onSyncCompleted={handleSyncCompleted} />
-        </div>
+        <main className="w-full p-4 sm:p-6 lg:p-8 flex-1 flex flex-col gap-6 relative">
+          {/* Ambient Radial Atmosphere Glows */}
+          <div className="absolute top-0 left-1/4 w-96 h-36 bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+          <div className="absolute top-20 right-1/4 w-80 h-44 bg-primary-container/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-        {/* Tab 1: Explore View */}
-        {activeTab === 'explore' && (
-          <div className="space-y-6">
-            {/* Metric Category Cards */}
-            <MetricsOverview
-              counts={counts}
-              activeCategory={selectedCategory}
-              onSelectCategory={(catId) => setSelectedCategory(catId || '')}
-              statusFilter={statusFilter}
-            />
-
-            {/* Filters Bar */}
-            <FiltersBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedDomain={selectedDomain}
-              setSelectedDomain={setSelectedDomain}
-              selectedLocation={selectedLocation}
-              setSelectedLocation={setSelectedLocation}
-              isPaidOnly={isPaidOnly}
-              setIsPaidOnly={setIsPaidOnly}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              onResetFilters={handleResetFilters}
-            />
-
-            {/* Feed Layout: Grid of Cards + Upcoming Deadlines Sidebar */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-              {/* Opportunities Grid (3 columns on lg) */}
-              <div className="lg:col-span-3 space-y-4">
-                {error && (
-                  <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center justify-between">
-                    <span>{error}</span>
-                    <button
-                      onClick={fetchOpportunities}
-                      className="px-2.5 py-1 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map((n) => (
-                      <div
-                        key={n}
-                        className="bg-white rounded-2xl border border-slate-200 p-5 h-56 animate-pulse"
-                      >
-                        <div className="h-4 bg-slate-100 rounded w-1/3 mb-4" />
-                        <div className="h-6 bg-slate-100 rounded w-3/4 mb-2" />
-                        <div className="h-4 bg-slate-100 rounded w-1/2 mb-6" />
-                        <div className="h-4 bg-slate-100 rounded w-full mb-2" />
-                        <div className="h-4 bg-slate-100 rounded w-2/3" />
-                      </div>
-                    ))}
-                  </div>
-                ) : opportunities.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                    <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    <h3 className="text-base font-bold text-slate-900">No matching opportunities</h3>
-                    <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                      Try clearing filters or adjusting your search keywords to view other open campus opportunities.
-                    </p>
-                    <button
-                      onClick={handleResetFilters}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {opportunitiesWithMatch.map((opp) => (
-                      <OpportunityCard
-                        key={opp.id}
-                        opportunity={opp}
-                        isSaved={savedOppIds.has(opp.id)}
-                        onToggleSave={handleToggleSave}
-                        onSelect={(item) => setSelectedOpportunity(item)}
-                        applicationStatus={appStatusMap[opp.id]}
-                        onUpdateStatus={(newStatus) => handleSaveApplication(opp.id, newStatus, '')}
-                        matchScore={opp.matchScore}
-                        matchedSkills={opp.matchedSkills}
-                      />
-                    ))}
-                  </div>
-
-                )}
-              </div>
-
-              {/* Sidebar: Upcoming Deadlines */}
-              <div className="lg:col-span-1 space-y-4">
-                <DeadlineSidebar
-                  opportunities={opportunities}
-                  onSelectOpportunity={(item) => setSelectedOpportunity(item)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab: Personalized Recommended for You (PRD §FR-1.3 & §FR-6.1) */}
-        {activeTab === 'recommended' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-brand-600" />
-                  <span>Curated For Your Profile</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Opportunities prioritized by domain relevance and declared technical skills
-                </p>
-              </div>
-              {user && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setProfileModalOpen(true)}
-                    className="text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition"
-                  >
-                    Configure Skills
-                  </button>
-                  <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
-                    {recommendedList.length} Matches Found
-                  </span>
+          {/* Student Welcome & Poornima Personalization Ribbon */}
+          {user && (
+            <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-secondary-container/15 text-secondary border border-secondary/30 flex items-center justify-center font-bold font-mono">
+                  {user.name ? user.name.slice(0, 2).toUpperCase() : 'PO'}
                 </div>
-              )}
-            </div>
-
-            {!user ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                <Sparkles className="w-10 h-10 text-brand-400 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-900">Sign in to unlock personalized recommendations</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                  Log in with your college student account to receive automated match scoring on hackathons, jobs, and placement drives.
-                </p>
-                <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
-                >
-                  Sign In
-                </button>
+                <div>
+                  <h2 className="font-headline-md text-body-md font-bold text-on-surface">
+                    Welcome back, {user.name}!
+                  </h2>
+                  <p className="font-mono-micro text-mono-micro text-on-surface-variant">
+                    Specializing in <span className="text-secondary font-semibold">{user.domain || 'Software Development'}</span> • Skills: {(user.skills || []).join(', ') || 'None set'}
+                  </p>
+                </div>
               </div>
-            ) : recommendedList.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-900">Add technical skills to your profile</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                  We match opportunities against your declared skills and domain. Add skills like Python, React, Docker, or AI to get ranked results.
-                </p>
+
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setProfileModalOpen(true)}
-                  className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700"
+                  className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-body-sm font-medium"
                 >
                   Edit Profile & Skills
                 </button>
+                {user.domain && selectedDomain !== user.domain && (
+                  <button
+                    onClick={() => setSelectedDomain(user.domain)}
+                    className="px-3 py-1.5 rounded-lg bg-secondary-container text-on-secondary font-bold text-body-sm hover:brightness-110 transition shadow-glow-secondary"
+                  >
+                    Match My Domain
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recommendedList.map((opp) => (
-                  <OpportunityCard
-                    key={opp.id}
-                    opportunity={opp}
-                    isSaved={savedOppIds.has(opp.id)}
-                    onToggleSave={handleToggleSave}
-                    onSelect={(item) => setSelectedOpportunity(item)}
-                    applicationStatus={appStatusMap[opp.id]}
-                    onUpdateStatus={(newStatus) => handleSaveApplication(opp.id, newStatus, '')}
-                    matchScore={opp.matchScore}
-                    matchedSkills={opp.matchedSkills}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 3: Saved Opportunities View */}
-        {activeTab === 'saved' && (
-
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-                  <Bookmark className="w-5 h-5 text-brand-600" />
-                  <span>Saved Opportunities</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Opportunities you have bookmarked for later review
-                </p>
-              </div>
-              <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
-                {savedItems.length} Bookmarked
-              </span>
             </div>
+          )}
 
-            {!user ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                <Bookmark className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-900">Sign in to view saved items</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                  Create a student account or log in to bookmark hackathons and jobs.
-                </p>
-                <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
-                >
-                  Sign In
-                </button>
+          {/* VIEW 1: Radar & Opportunity Bento Feed */}
+          {activeTab === 'radar' && (
+            <div className="space-y-6">
+              {/* Prime Match Bento Hero */}
+              {primeMatchOpportunity && (
+                <PrimeMatchHero
+                  opportunity={primeMatchOpportunity}
+                  onSelect={setSelectedOpportunity}
+                  isSaved={savedOppIds.has(primeMatchOpportunity.id)}
+                  onToggleSave={handleToggleSave}
+                  applicationStatus={appStatusMap[primeMatchOpportunity.id]}
+                  onUpdateStatus={handleSaveApplication}
+                />
+              )}
+
+              {/* Category Counts Overview */}
+              <MetricsOverview
+                counts={counts}
+                activeCategory={selectedCategory}
+                onSelectCategory={(catId) => setSelectedCategory(catId || '')}
+                statusFilter={statusFilter}
+              />
+
+              {/* Search & Filters Bar */}
+              <FiltersBar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedDomain={selectedDomain}
+                setSelectedDomain={setSelectedDomain}
+                selectedLocation={selectedLocation}
+                setSelectedLocation={setSelectedLocation}
+                isPaidOnly={isPaidOnly}
+                setIsPaidOnly={setIsPaidOnly}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onResetFilters={handleResetFilters}
+              />
+
+              {/* Grid: Bento Opportunity Cards + Upcoming Deadlines Radar */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                {/* 3-Col Opportunity Bento Cards Grid */}
+                <div className="lg:col-span-3 space-y-4">
+                  {error && (
+                    <div className="p-4 rounded-xl bg-error-container/20 border border-error/40 text-error text-body-sm flex items-center justify-between">
+                      <span>{error}</span>
+                      <button
+                        onClick={fetchOpportunities}
+                        className="px-3 py-1 bg-error-container text-on-error rounded-lg font-bold"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((n) => (
+                        <div
+                          key={n}
+                          className="bg-surface-container-low border border-hairline rounded-xl p-5 h-52 animate-pulse flex flex-col justify-between"
+                        >
+                          <div className="h-4 bg-surface-container-high rounded w-1/3" />
+                          <div className="h-6 bg-surface-container-high rounded w-3/4" />
+                          <div className="h-4 bg-surface-container-high rounded w-1/2" />
+                          <div className="h-4 bg-surface-container-high rounded w-full" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : opportunitiesWithMatch.length === 0 ? (
+                    <div className="p-12 rounded-xl bg-surface-container-low border border-hairline text-center space-y-3">
+                      <span className="material-symbols-outlined text-[40px] text-outline">
+                        radar
+                      </span>
+                      <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
+                        No Opportunities Matched Filters
+                      </h3>
+                      <p className="font-mono-micro text-mono-micro text-on-surface-variant max-w-md mx-auto">
+                        Try clearing active category or domain filters, or click below to trigger a live multi-source web and email crawl.
+                      </p>
+                      <button
+                        onClick={handleResetFilters}
+                        className="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-bold text-body-sm shadow-glow-primary"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {opportunitiesWithMatch.map((opp) => (
+                        <OpportunityCard
+                          key={opp.id}
+                          opportunity={opp}
+                          isSaved={savedOppIds.has(opp.id)}
+                          onToggleSave={handleToggleSave}
+                          onSelect={setSelectedOpportunity}
+                          applicationStatus={appStatusMap[opp.id]}
+                          onUpdateStatus={handleSaveApplication}
+                          matchScore={opp.matchScore}
+                          matchedSkills={opp.matchedSkills}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Deadlines Radar */}
+                <div className="lg:col-span-1 space-y-4">
+                  <DeadlineSidebar
+                    opportunities={opportunities}
+                    onSelectOpportunity={setSelectedOpportunity}
+                  />
+                </div>
               </div>
-            ) : savedItems.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                <Bookmark className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-900">No saved opportunities yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                  Click the bookmark icon on any opportunity card to save it to your personal list.
-                </p>
-                <button
-                  onClick={() => setActiveTab('explore')}
-                  className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700"
-                >
-                  Explore Opportunities
-                </button>
+            </div>
+          )}
+
+          {/* VIEW 2: Active Pipeline Kanban Board */}
+          {activeTab === 'pipeline' && (
+            <ApplicationTracker
+              applications={applications}
+              onUpdateStatus={handleUpdateAppStatus}
+              onDeleteApplication={handleDeleteApplication}
+              onSelectOpportunity={setSelectedOpportunity}
+              onCreateManualEntry={handleCreateManualEntry}
+            />
+          )}
+
+          {/* VIEW 3: Saved Opportunities View */}
+          {activeTab === 'saved' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-hairline">
+                <div>
+                  <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[24px] text-secondary">
+                      bookmark
+                    </span>
+                    Saved Opportunities
+                  </h1>
+                  <p className="font-mono-micro text-mono-micro text-outline mt-0.5">
+                    Your personal radar shortlist of saved postings and hackathons
+                  </p>
+                </div>
+                <span className="font-mono-micro text-mono-micro px-2 py-0.5 rounded bg-surface-container-high text-secondary">
+                  {savedOpportunitiesList.length} Items Saved
+                </span>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {savedItems.map((item) => {
-                  const opp = item.opportunity;
-                  if (!opp) return null;
-                  const match = computeMatch(opp, user);
-                  return (
+
+              {savedOpportunitiesList.length === 0 ? (
+                <div className="p-16 rounded-xl bg-surface-container-low border border-hairline text-center space-y-3">
+                  <span className="material-symbols-outlined text-[40px] text-outline">
+                    bookmark_border
+                  </span>
+                  <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
+                    No Opportunities Shortlisted
+                  </h3>
+                  <p className="font-mono-micro text-mono-micro text-on-surface-variant max-w-sm mx-auto">
+                    Click the bookmark icon on any opportunity card in the Stream to save it here for quick access.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('radar')}
+                    className="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-bold text-body-sm shadow-glow-primary"
+                  >
+                    Browse Opportunity Stream
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {savedOpportunitiesList.map((opp) => (
                     <OpportunityCard
                       key={opp.id}
                       opportunity={opp}
                       isSaved={true}
                       onToggleSave={handleToggleSave}
-                      onSelect={(oppItem) => setSelectedOpportunity({ ...oppItem, ...match })}
+                      onSelect={setSelectedOpportunity}
                       applicationStatus={appStatusMap[opp.id]}
-                      onUpdateStatus={(newStatus) => handleSaveApplication(opp.id, newStatus, '')}
-                      matchScore={match.matchScore}
-                      matchedSkills={match.matchedSkills}
+                      onUpdateStatus={handleSaveApplication}
+                      matchScore={opp.matchScore}
+                      matchedSkills={opp.matchedSkills}
                     />
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-            )}
-          </div>
-        )}
+          {/* VIEW 4: Scraper Health & Crawler Topology View */}
+          {activeTab === 'scrapers' && (
+            <CrawlerTopologyView onSyncCompleted={handleSyncCompleted} />
+          )}
+        </main>
+      </div>
 
-        {/* Tab 3: Applications Pipeline View */}
-        {activeTab === 'applications' && (
-          <div>
-            {!user ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                <h3 className="text-base font-bold text-slate-900">Sign in to track applications</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                  Keep track of all your applied roles, interviews, and offers in one organized dashboard.
-                </p>
-                <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
-                >
-                  Sign In
-                </button>
-              </div>
-            ) : (
-              <ApplicationTracker
-                applications={applications}
-                onUpdateStatus={handleUpdateAppStatus}
-                onDeleteApplication={handleDeleteApplication}
-                onSelectOpportunity={(opp) => setSelectedOpportunity(opp)}
-              />
-            )}
-          </div>
-        )}
-      </main>
+      {/* Global Command Palette Modal (⌘K) */}
+      <CommandPaletteModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+        opportunities={opportunitiesWithMatch}
+        onSelectOpportunity={setSelectedOpportunity}
+      />
 
-      {/* Opportunity Details Modal */}
+      {/* Opportunity Detail Drawer / Modal */}
       {selectedOpportunity && (
         <OpportunityDetailModal
           opportunity={selectedOpportunity}
@@ -688,28 +680,30 @@ export default function App() {
         />
       )}
 
-      {/* Authentication Modal */}
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
 
-      {/* Student Profile & Technical Skills Modal (PRD §FR-1.2) */}
+      {/* Profile Modal */}
       <ProfileModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
       />
 
-      {/* Campus Email Mailbox Modal */}
+      {/* Email Sync Modal */}
       <EmailSyncModal
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
         onSyncComplete={handleSyncCompleted}
       />
 
-      {/* Admin Scraper Sources Modal */}
+      {/* Admin Sources Modal */}
       <AdminSourcesModal
         isOpen={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}
       />
     </div>
-
   );
 }

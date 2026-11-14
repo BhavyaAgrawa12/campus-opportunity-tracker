@@ -1,16 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  User as UserIcon,
-  BookOpen,
-  MapPin,
-  Target,
-  Code2,
-  Globe,
-  Sparkles,
-  CheckCircle,
-  Briefcase
-} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const DOMAIN_OPTIONS = [
@@ -65,7 +53,7 @@ export default function ProfileModal({ isOpen, onClose }) {
     try {
       const skillsArray = skills
         .split(',')
-        .map((s) => s.trim().toLowerCase())
+        .map((s) => s.trim())
         .filter(Boolean);
 
       await updateProfile({
@@ -78,231 +66,176 @@ export default function ProfileModal({ isOpen, onClose }) {
         remote_preference: remotePreference,
       });
 
-      setSuccess('Profile updated successfully! Personalized recommendations updated.');
+      setSuccess('Profile updated successfully! Algorithmic match scores recalculated.');
       setTimeout(() => {
         onClose();
       }, 1200);
     } catch (err) {
-      setError(err.message || 'Failed to update profile. Please try again.');
+      console.error('Failed to update profile:', err);
+      setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-surface-container-low border border-hairline rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-              <UserIcon className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-4 border-b border-hairline">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary-container/20 border border-secondary/30 text-secondary flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px]">psychology</span>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Student Profile & Preferences</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Configure your education, technical skills, and target roles (PRD §FR-1.2)
+              <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
+                Student Profile & Match Matrix
+              </h2>
+              <p className="font-mono-micro text-mono-micro text-outline">
+                PRD §FR-1: Powers Algorithmic Recommendations & Scoring
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            className="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface border border-hairline transition"
           >
-            <X className="w-5 h-5" />
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg font-medium">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg font-medium flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>{success}</span>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Full Name */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
-              <div className="relative">
-                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                />
-              </div>
-            </div>
-
-            {/* Email (Read Only) */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">College Email</label>
-              <input
-                type="email"
-                disabled
-                value={user.email}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
-              />
-            </div>
+        {error && (
+          <div className="mt-4 p-3 bg-error-container/20 border border-error/40 text-error rounded-xl text-body-sm">
+            {error}
           </div>
+        )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Education */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                College / Degree
-              </label>
-              <div className="relative">
-                <BookOpen className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="e.g. B.Tech CSE - Poornima University"
-                  value={education}
-                  onChange={(e) => setEducation(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                />
-              </div>
-            </div>
-
-            {/* Domain */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Primary Domain
-              </label>
-              <div className="relative">
-                <Target className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <select
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                >
-                  {DOMAIN_OPTIONS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        {success && (
+          <div className="mt-4 p-3 bg-tertiary-container/20 border border-tertiary/40 text-tertiary rounded-xl text-body-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            <span>{success}</span>
           </div>
+        )}
 
-          {/* Technical Skills */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                Technical Skills (comma-separated)
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-body-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                Full Name
               </label>
-              <span className="text-[11px] text-slate-400">Used for match scoring</span>
-            </div>
-            <div className="relative">
-              <Code2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <input
                 type="text"
-                placeholder="e.g. react, nodejs, python, fastapi, docker, typescript"
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                required
               />
             </div>
-            {skills && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {skills
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-                  .map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-0.5 text-xs font-medium bg-brand-50 text-brand-700 rounded-md border border-brand-200"
-                    >
-                      #{skill}
-                    </span>
-                  ))}
-              </div>
-            )}
+
+            <div>
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                Primary Domain / Specialization
+              </label>
+              <select
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary capitalize"
+              >
+                {DOMAIN_OPTIONS.map((d) => (
+                  <option key={d} value={d} className="bg-surface-container">
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+              Skills (comma-separated tags)
+            </label>
+            <input
+              type="text"
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="e.g. Python, React, FastAPI, Docker, PyTorch"
+              className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary font-mono-micro"
+            />
+            <span className="font-mono-micro text-mono-micro text-outline mt-1 block">
+              Used to compute direct percentage overlap on job & hackathon cards.
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Preferred Role */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Preferred Job Role / Title
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                College / Institution
               </label>
-              <div className="relative">
-                <Briefcase className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="e.g. Full Stack Engineer, ML Intern"
-                  value={preferredRole}
-                  onChange={(e) => setPreferredRole(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                />
-              </div>
+              <input
+                type="text"
+                value={education}
+                onChange={(e) => setEducation(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+              />
             </div>
 
-            {/* Location */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Preferred Base Location
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                Base Location / City
               </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="e.g. Jaipur, Bengaluru, India"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600"
-                />
-              </div>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+              />
             </div>
           </div>
 
-          {/* Remote Preference Toggle */}
-          <div className="pt-2 flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="flex items-center space-x-3">
-              <Globe className="w-5 h-5 text-indigo-600" />
-              <div>
-                <p className="text-xs font-bold text-slate-800">Remote Work Preference</p>
-                <p className="text-[11px] text-slate-500">
-                  Prioritize remote opportunities alongside on-campus drives
-                </p>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-mono-micro text-mono-micro text-on-surface-variant uppercase mb-1">
+                Preferred Target Role
+              </label>
+              <input
+                type="text"
+                value={preferredRole}
+                onChange={(e) => setPreferredRole(e.target.value)}
+                placeholder="e.g. Full Stack Engineer, ML Intern"
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-container border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+              />
             </div>
-            <input
-              type="checkbox"
-              checked={remotePreference}
-              onChange={(e) => setRemotePreference(e.target.checked)}
-              className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
-            />
+
+            <div className="flex items-center pt-6">
+              <label className="flex items-center gap-2.5 cursor-pointer text-body-sm text-on-surface">
+                <input
+                  type="checkbox"
+                  checked={remotePreference}
+                  onChange={(e) => setRemotePreference(e.target.checked)}
+                  className="rounded bg-surface-container border-hairline text-secondary focus:ring-0 cursor-pointer"
+                />
+                <span className="font-mono-micro text-mono-micro uppercase">
+                  Prioritize Remote & Hybrid Opportunities
+                </span>
+              </label>
+            </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+          <div className="pt-4 border-t border-hairline flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition"
+              className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface border border-hairline transition text-body-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-500/20 transition disabled:opacity-50"
+              className="px-5 py-2 rounded-lg bg-primary-container text-on-primary font-bold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save Profile Preferences'}</span>
+              {saving ? 'Updating Matrix...' : 'Save Profile'}
             </button>
           </div>
         </form>

@@ -1,25 +1,12 @@
 import React, { useState } from 'react';
-import {
-  Briefcase,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  Trash2,
-  Edit2,
-  Calendar,
-  Building,
-  Bookmark,
-  Download
-} from 'lucide-react';
-
 
 const STAGES = [
-  { id: 'saved', label: 'Saved', color: 'border-slate-300 bg-slate-50 text-slate-700' },
-  { id: 'applied', label: 'Applied', color: 'border-blue-300 bg-blue-50 text-blue-700' },
-  { id: 'shortlisted', label: 'Shortlisted', color: 'border-amber-300 bg-amber-50 text-amber-700' },
-  { id: 'interview', label: 'Interview', color: 'border-purple-300 bg-purple-50 text-purple-700' },
-  { id: 'selected', label: 'Selected', color: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
-  { id: 'rejected', label: 'Rejected', color: 'border-rose-300 bg-rose-50 text-rose-700' },
+  { id: 'saved', label: 'Saved / Radar', color: 'border-outline-variant bg-surface-container text-on-surface' },
+  { id: 'applied', label: 'Applied', color: 'border-secondary/40 bg-surface-container text-secondary' },
+  { id: 'shortlisted', label: 'Shortlisted', color: 'border-primary/40 bg-surface-container text-primary' },
+  { id: 'interview', label: 'Technical / Interview', color: 'border-primary-container/40 bg-surface-container text-primary-fixed' },
+  { id: 'selected', label: 'Selected / Offer', color: 'border-tertiary/40 bg-surface-container text-tertiary' },
+  { id: 'rejected', label: 'Archived / Rejected', color: 'border-error/40 bg-surface-container text-error' },
 ];
 
 export default function ApplicationTracker({
@@ -27,9 +14,18 @@ export default function ApplicationTracker({
   onUpdateStatus,
   onDeleteApplication,
   onSelectOpportunity,
+  onCreateManualEntry,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [notesText, setNotesText] = useState('');
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualData, setManualData] = useState({
+    title: '',
+    organization: '',
+    category: 'job',
+    status: 'applied',
+    notes: '',
+  });
 
   const handleStartEdit = (app) => {
     setEditingId(app.id);
@@ -60,179 +56,473 @@ export default function ApplicationTracker({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `campus-opportunity-applications-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `campus-applications-pipeline-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  // Group applications by stage
+  const grouped = {};
+  STAGES.forEach((s) => {
+    grouped[s.id] = [];
+  });
+  applications.forEach((app) => {
+    const s = app.status || 'saved';
+    if (grouped[s]) {
+      grouped[s].push(app);
+    } else {
+      grouped['saved'].push(app);
+    }
+  });
+
+  // Calculate metrics
+  const totalInFlight = applications.length;
+  const activeInterviews = grouped['interview']?.length || 0;
+  const offersSelected = grouped['selected']?.length || 0;
+  const appliedCount = grouped['applied']?.length || 0;
+
+  // Move stage left/right
+  const handleShiftStage = (app, direction) => {
+    const stageIds = STAGES.map((s) => s.id);
+    const currentIndex = stageIds.indexOf(app.status || 'saved');
+    const nextIndex = currentIndex + direction;
+    if (nextIndex >= 0 && nextIndex < stageIds.length) {
+      onUpdateStatus(app.id, stageIds[nextIndex]);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-            <Briefcase className="w-5 h-5 text-brand-600" />
-            <span>Opportunity Pipeline</span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Track and progress your applications from initial save to final offer
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          {applications.length > 0 && (
+      {/* COCKPIT PIPELINE METRICS & ACTIONS HEADER */}
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-hairline">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <span className="font-mono-micro text-mono-micro px-2.5 py-0.5 rounded-full bg-secondary/15 text-secondary tracking-widest uppercase flex items-center gap-1.5 border border-secondary/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse"></span>
+                Live Pipeline Stream
+              </span>
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant">
+                // SPRINT &apos;25 CYCLE
+              </span>
+              <span className="font-mono-micro text-mono-micro text-outline tracking-wider hidden sm:inline">
+                BUILD: #8820-STABLE
+              </span>
+            </div>
+            <h1 className="font-headline-xl text-headline-xl tracking-tight text-on-surface font-extrabold flex items-baseline gap-3">
+              APPLICATION PIPELINE
+              <span className="font-mono-code text-mono-code text-primary font-normal text-lg">
+                v2.54
+              </span>
+            </h1>
+          </div>
+
+          {/* Action Control Group */}
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
-              onClick={handleExportCSV}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 shadow-xs transition"
-              title="Export tracking table as CSV for placement cell records"
+              onClick={() => setManualModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110 active:scale-95 transition shadow-glow-primary"
             >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Export CSV</span>
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span>New Entry</span>
+              <kbd className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-on-primary/20 text-on-primary">
+                N
+              </kbd>
             </button>
-          )}
-          <div className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg w-fit">
-            {applications.length} Total Tracked
-          </div>
-        </div>
-      </div>
 
-
-      {applications.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
-            <Briefcase className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-slate-900">No applications tracked yet</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-            Explore opportunities and click "Track" or "Apply" to organize your interview pipeline here.
-          </p>
-        </div>
-      ) : (
-        /* Kanban Columns */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-start">
-          {STAGES.map((stage) => {
-            const stageApps = applications.filter((a) => a.status === stage.id);
-
-            return (
-              <div
-                key={stage.id}
-                className="bg-slate-50/80 rounded-2xl p-3 border border-slate-200 flex flex-col max-h-[75vh]"
+            {applications.length > 0 && (
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-hairline transition text-body-sm"
+                title="Export Pipeline CSV"
               >
-                {/* Column Header */}
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200">
-                  <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${stage.color}`}>
+                <span className="material-symbols-outlined text-[18px] text-secondary">
+                  download
+                </span>
+                <span>Export CSV</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 4 Bento Telemetry Metrics Quadrants */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Metric 1: Total In Flight */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+                Total In Flight
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-secondary">
+                flight_takeoff
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono-metric text-mono-metric font-bold text-on-surface">
+                {totalInFlight}
+              </span>
+              <span className="font-mono-micro text-mono-micro text-tertiary flex items-center">
+                <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                active
+              </span>
+            </div>
+            <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+              <div
+                className="bg-secondary h-full transition-all"
+                style={{ width: `${Math.min(100, totalInFlight * 10)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Metric 2: Active Interviews */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+                Active Interviews
+              </span>
+              <span className="h-2 w-2 rounded-full bg-primary-container animate-ping"></span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono-metric text-mono-metric font-bold text-primary">
+                {activeInterviews.toString().padStart(2, '0')}
+              </span>
+              <span className="font-mono-micro text-mono-micro text-primary-fixed-dim">
+                High Priority
+              </span>
+            </div>
+            <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+              <div
+                className="bg-primary-container h-full transition-all"
+                style={{ width: `${Math.min(100, activeInterviews * 25)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Metric 3: Offers / Selected */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+                Offers / Selected
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-tertiary">
+                military_tech
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono-metric text-mono-metric font-bold text-tertiary">
+                {offersSelected.toString().padStart(2, '0')}
+              </span>
+              <span className="font-mono-micro text-mono-micro px-1.5 py-0.2 rounded bg-tertiary-container/30 text-tertiary">
+                Success Node
+              </span>
+            </div>
+            <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+              <div
+                className="bg-tertiary h-full transition-all"
+                style={{ width: `${Math.min(100, offersSelected * 33)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Metric 4: Applied Velocity */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-hairline flex flex-col gap-2 relative overflow-hidden group hover:bg-surface-container transition-all">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant uppercase tracking-wider">
+                Submissions
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-outline">
+                speed
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono-metric text-mono-metric font-bold text-on-surface">
+                {appliedCount}
+              </span>
+              <span className="font-mono-micro text-mono-micro text-on-surface-variant">
+                in pipeline
+              </span>
+            </div>
+            <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+              <div
+                className="bg-secondary-container h-full transition-all"
+                style={{ width: `${Math.min(100, appliedCount * 15)}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6 Kanban Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-start overflow-x-auto pb-4">
+        {STAGES.map((stage) => {
+          const items = grouped[stage.id] || [];
+          return (
+            <div
+              key={stage.id}
+              className="bg-surface-container-lowest border border-hairline rounded-xl flex flex-col min-w-[240px]"
+            >
+              {/* Lane Header */}
+              <div className="p-3 border-b border-hairline flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`}></span>
+                  <span className="font-mono-micro text-mono-micro font-bold uppercase tracking-wider text-on-surface">
                     {stage.label}
                   </span>
-                  <span className="text-xs font-semibold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                    {stageApps.length}
-                  </span>
                 </div>
+                <span className="font-mono-micro text-mono-micro px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">
+                  {items.length}
+                </span>
+              </div>
 
-                {/* Applications list */}
-                <div className="space-y-2.5 overflow-y-auto pr-1">
-                  {stageApps.map((app) => {
-                    const opp = app.opportunity;
-                    if (!opp) return null;
-
+              {/* Lane Body Cards */}
+              <div className="p-2 space-y-2.5 min-h-[140px] max-h-[700px] overflow-y-auto">
+                {items.length === 0 ? (
+                  <div className="py-8 text-center text-mono-micro text-outline text-[11px]">
+                    No items in this lane
+                  </div>
+                ) : (
+                  items.map((app) => {
+                    const opp = app.opportunity || {};
                     return (
                       <div
                         key={app.id}
-                        className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition text-xs flex flex-col justify-between"
+                        className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container border border-hairline transition shadow-sm flex flex-col justify-between group"
                       >
                         <div>
+                          {/* Role Title */}
                           <div
-                            className="cursor-pointer font-bold text-slate-900 hover:text-brand-600 transition leading-snug line-clamp-2"
-                            onClick={() => onSelectOpportunity(opp)}
+                            onClick={() => onSelectOpportunity && opp.id && onSelectOpportunity(opp)}
+                            className="font-body-sm font-semibold text-on-surface hover:text-primary transition cursor-pointer line-clamp-2 leading-snug"
                           >
-                            {opp.title}
+                            {opp.title || 'Untitled Role'}
                           </div>
 
-                          <div className="flex items-center space-x-1.5 text-slate-500 font-semibold mt-1">
-                            <Building className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{opp.organization}</span>
+                          {/* Company */}
+                          <div className="flex items-center gap-1.5 text-on-surface-variant text-[11px] mt-1 font-mono-micro truncate">
+                            <span className="material-symbols-outlined text-[13px] text-secondary">
+                              corporate_fare
+                            </span>
+                            <span>{opp.organization || 'Direct'}</span>
                           </div>
 
-                          {opp.deadline && (
-                            <div className="flex items-center space-x-1 text-slate-400 text-[11px] mt-1.5">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>
-                                {new Date(opp.deadline).toLocaleDateString('en-IN', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </span>
+                          {/* Notes Preview */}
+                          {app.notes && (
+                            <div className="mt-2 p-1.5 rounded bg-surface-container-highest/60 text-outline text-[11px] italic line-clamp-2 border border-hairline">
+                              &ldquo;{app.notes}&rdquo;
                             </div>
                           )}
-
-                          {/* Notes */}
-                          <div className="mt-2 pt-2 border-t border-slate-100">
-                            {editingId === app.id ? (
-                              <div className="space-y-1.5">
-                                <textarea
-                                  value={notesText}
-                                  onChange={(e) => setNotesText(e.target.value)}
-                                  placeholder="Add interview notes, recruiter contact, etc."
-                                  className="w-full text-[11px] p-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-500"
-                                  rows={2}
-                                />
-                                <div className="flex justify-end space-x-1">
-                                  <button
-                                    onClick={() => setEditingId(null)}
-                                    className="px-2 py-0.5 text-[10px] text-slate-500 hover:bg-slate-100 rounded"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={() => handleSaveNotes(app.id)}
-                                    className="px-2 py-0.5 text-[10px] bg-brand-600 text-white font-semibold rounded"
-                                  >
-                                    Save
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div
-                                onClick={() => handleStartEdit(app)}
-                                className="group flex items-start justify-between cursor-pointer text-[11px] text-slate-500 hover:text-slate-800"
-                              >
-                                <span className="italic line-clamp-2">
-                                  {app.notes || 'Click to add notes...'}
-                                </span>
-                                <Edit2 className="w-3 h-3 text-slate-300 group-hover:text-slate-500 shrink-0 ml-1" />
-                              </div>
-                            )}
-                          </div>
                         </div>
 
-                        {/* Status Change Selector & Delete */}
-                        <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
-                          <select
-                            value={app.status}
-                            onChange={(e) => onUpdateStatus(app.id, e.target.value, null)}
-                            className="text-[11px] font-semibold bg-slate-50 border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-700"
-                          >
-                            {STAGES.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                Move: {s.label}
-                              </option>
-                            ))}
-                          </select>
+                        {/* Bottom Actions: Stage shift arrows + Memo button + Delete */}
+                        <div className="pt-2.5 mt-2 border-t border-hairline flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleShiftStage(app, -1)}
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition disabled:opacity-30"
+                              title="Shift lane left"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_back
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => handleShiftStage(app, 1)}
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition disabled:opacity-30"
+                              title="Shift lane right"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_forward
+                              </span>
+                            </button>
+                          </div>
 
-                          <button
-                            onClick={() => onDeleteApplication(app.id)}
-                            title="Remove from tracker"
-                            className="p-1 text-slate-300 hover:text-rose-500 rounded transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleStartEdit(app)}
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition"
+                              title="Edit memo / notes"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                edit_note
+                              </span>
+                            </button>
+
+                            <button
+                              onClick={() => onDeleteApplication(app.id)}
+                              className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-error transition"
+                              title="Remove from tracking"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                delete
+                              </span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
-                  })}
+                  })
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Memo Notes Modal */}
+      {editingId && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface-container-low border border-hairline rounded-xl max-w-md w-full p-5 shadow-2xl">
+            <h3 className="text-body-md font-bold text-on-surface mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-secondary">
+                edit_note
+              </span>
+              Application Memo & Interview Notes
+            </h3>
+            <textarea
+              rows={4}
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              placeholder="e.g. Completed online assessment, interview scheduled for Friday 3 PM..."
+              className="w-full p-3 rounded-lg bg-surface-container-highest border border-hairline text-on-surface text-body-sm focus:outline-none focus:border-secondary resize-none"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setEditingId(null)}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:text-on-surface"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveNotes(editingId)}
+                className="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110"
+              >
+                Save Memo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Entry Modal */}
+      {manualModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface-container-low border border-hairline rounded-xl max-w-md w-full p-5 shadow-2xl">
+            <h3 className="text-body-md font-bold text-on-surface mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">
+                add_task
+              </span>
+              Record Manual Application Entry
+            </h3>
+
+            <div className="space-y-3 text-body-sm">
+              <div>
+                <label className="block text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Role / Opportunity Title *
+                </label>
+                <input
+                  type="text"
+                  value={manualData.title}
+                  onChange={(e) => setManualData({ ...manualData, title: e.target.value })}
+                  placeholder="e.g. Associate Software Engineer"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Company / Organizer *
+                </label>
+                <input
+                  type="text"
+                  value={manualData.organization}
+                  onChange={(e) => setManualData({ ...manualData, organization: e.target.value })}
+                  placeholder="e.g. Google India / Unstop Hackathon"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-mono-micro text-on-surface-variant uppercase mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={manualData.category}
+                    onChange={(e) => setManualData({ ...manualData, category: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                  >
+                    <option value="job">Job</option>
+                    <option value="internship">Internship</option>
+                    <option value="hackathon">Hackathon</option>
+                    <option value="scholarship">Scholarship</option>
+                    <option value="nomination">Nomination</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-mono-micro text-on-surface-variant uppercase mb-1">
+                    Initial Stage
+                  </label>
+                  <select
+                    value={manualData.status}
+                    onChange={(e) => setManualData({ ...manualData, status: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary"
+                  >
+                    {STAGES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            );
-          })}
+
+              <div>
+                <label className="block text-mono-micro text-on-surface-variant uppercase mb-1">
+                  Memo / Tracking Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={manualData.notes}
+                  onChange={(e) => setManualData({ ...manualData, notes: e.target.value })}
+                  placeholder="e.g. Applied via college drive portal..."
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container-highest border border-hairline text-on-surface focus:outline-none focus:border-secondary resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setManualModalOpen(false)}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:text-on-surface"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!manualData.title || !manualData.organization) {
+                    alert('Please provide role title and company');
+                    return;
+                  }
+                  if (onCreateManualEntry) {
+                    await onCreateManualEntry(manualData);
+                  }
+                  setManualModalOpen(false);
+                  setManualData({
+                    title: '',
+                    organization: '',
+                    category: 'job',
+                    status: 'applied',
+                    notes: '',
+                  });
+                }}
+                className="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-semibold text-body-sm hover:brightness-110"
+              >
+                Create Entry
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
